@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { prisma } from "@/lib/prisma";
 import { Newspaper } from "lucide-react";
 import Image from "next/image";
