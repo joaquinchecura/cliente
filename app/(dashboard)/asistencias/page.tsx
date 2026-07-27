@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getCurrentMember } from "@/lib/member";
 import { prisma } from "@/lib/prisma";
 import { QrCode, CheckCircle, XCircle, AlertTriangle } from "lucide-react";

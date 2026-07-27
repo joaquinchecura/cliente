@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getCurrentMember } from "@/lib/member";
 import { User, Mail, Phone, MapPin, AlertCircle } from "lucide-react";
 
