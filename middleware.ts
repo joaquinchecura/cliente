@@ -1,21 +1,29 @@
-// middleware.ts
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
+import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
 
-const isPublicRoute = createRouteMatcher([
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  "/completar-perfil",
-]);
-
-export default clerkMiddleware(async (auth, req) => {
-  if (!isPublicRoute(req)) {
-    await auth.protect();
+export async function getCurrentMember() {
+  const user = await currentUser();
+  
+  if (!user) {
+    redirect("/sign-in");
   }
-});
 
-export const config = {
-  matcher: [
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    "/(api|trpc)(.*)",
-  ],
-};
+  const member = await prisma.member.findUnique({
+    where: { clerkUserId: user.id },
+    include: {
+      memberships: {
+        where: { status: "ACTIVE" },
+        include: { plan: true },
+        orderBy: { endDate: "desc" },
+        take: 1,
+      },
+    },
+  });
+
+  if (!member) {
+    redirect("/completar-perfil");
+  }
+
+  return member;
+}
