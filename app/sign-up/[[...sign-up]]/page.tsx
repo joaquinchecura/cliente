@@ -15,8 +15,8 @@ export default function SignUpPage() {
         <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
           <SignUp
             routing="hash"
-            fallbackRedirectUrl="/completar-perfil"
-            signInUrl="/sign-in"
+            forceRedirectUrl="/completar-perfil"
+            signInForceRedirectUrl="/"
             appearance={{
               elements: {
                 formButtonPrimary: "bg-blue-600 hover:bg-blue-700 text-white",

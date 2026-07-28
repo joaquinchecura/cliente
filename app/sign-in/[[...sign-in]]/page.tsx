@@ -15,8 +15,8 @@ export default function SignInPage() {
         <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
           <SignIn
             routing="hash"
-            fallbackRedirectUrl="/"
-            signUpUrl="/sign-up"
+            forceRedirectUrl="/"
+            signUpForceRedirectUrl="/completar-perfil"
             appearance={{
               elements: {
                 formButtonPrimary: "bg-blue-600 hover:bg-blue-700 text-white",
@@ -27,8 +27,6 @@ export default function SignInPage() {
                 formFieldLabel: "text-zinc-400",
                 formFieldInput: "bg-zinc-950 border-zinc-800 text-white",
                 footerActionLink: "text-blue-400 hover:text-blue-300",
-                identityPreviewText: "text-white",
-                identityPreviewEditButton: "text-blue-400",
               },
             }}
           />
