@@ -6,14 +6,14 @@ import {
 } from "lucide-react";
 
 const nav = [
-  { href: "/dashboard", label: "Inicio", icon: Home },
-  { href: "/dashboard/clases", label: "Clases", icon: Calendar },
-  { href: "/dashboard/rutina", label: "Mi Rutina", icon: Dumbbell },
-  { href: "/dashboard/progreso", label: "Progreso", icon: TrendingUp },
-  { href: "/dashboard/asistencias", label: "Asistencias", icon: QrCode },
-  { href: "/dashboard/pagos", label: "Pagos", icon: CreditCard },
-  { href: "/dashboard/noticias", label: "Noticias", icon: Newspaper },
-  { href: "/dashboard/perfil", label: "Perfil", icon: User },
+  { href: "/", label: "Inicio", icon: Home },
+  { href: "/clases", label: "Clases", icon: Calendar },
+  { href: "/rutina", label: "Mi Rutina", icon: Dumbbell },
+  { href: "/progreso", label: "Progreso", icon: TrendingUp },
+  { href: "/asistencias", label: "Asistencias", icon: QrCode },
+  { href: "/pagos", label: "Pagos", icon: CreditCard },
+  { href: "/noticias", label: "Noticias", icon: Newspaper },
+  { href: "/perfil", label: "Perfil", icon: User },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

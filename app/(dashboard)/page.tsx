@@ -47,22 +47,22 @@ export default async function DashboardPage() {
       )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link href="/dashboard/clases" className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
+        <Link href="/clases" className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
           <Calendar className="text-blue-400 mb-3" size={24} />
           <p className="text-2xl font-bold">{bookingsCount}</p>
           <p className="text-sm text-zinc-500">Reservas</p>
         </Link>
-        <Link href="/dashboard/rutina" className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
+        <Link href="/rutina" className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
           <Dumbbell className="text-green-400 mb-3" size={24} />
           <p className="text-2xl font-bold">{routinesCount}</p>
           <p className="text-sm text-zinc-500">Rutinas</p>
         </Link>
-        <Link href="/dashboard/asistencias" className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
+        <Link href="/asistencias" className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
           <QrCode className="text-purple-400 mb-3" size={24} />
           <p className="text-2xl font-bold">{attendancesCount}</p>
           <p className="text-sm text-zinc-500">Asistencias</p>
         </Link>
-        <Link href="/dashboard/progreso" className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
+        <Link href="/progreso" className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
           <TrendingUp className="text-orange-400 mb-3" size={24} />
           <p className="text-2xl font-bold">{lastWeight ? `${Number(lastWeight.weight)} kg` : "—"}</p>
           <p className="text-sm text-zinc-500">Último peso</p>
