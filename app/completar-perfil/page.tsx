@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -9,13 +11,12 @@ async function vincularCuenta(formData: FormData) {
   const dni = formData.get("dni") as string;
   const phone = formData.get("phone") as string;
 
-  // Buscar member por DNI y teléfono (el manager ya lo cargó)
   const member = await prisma.member.findFirst({
     where: { dni, phone },
   });
 
   if (!member) {
-    // Crear uno nuevo si no existe
+    // Crear nuevo
     await prisma.member.create({
       data: {
         clerkUserId: clerkId,
@@ -39,18 +40,19 @@ async function vincularCuenta(formData: FormData) {
     });
   }
 
-  revalidatePath("/dashboard");
-  redirect("/dashboard");
+  revalidatePath("/");
+  redirect("/");
 }
 
 export default async function CompletarPerfilPage() {
   const user = await currentUser();
   if (!user) redirect("/sign-in");
 
-  const yaVinculado = await prisma.member.findUnique({
+  // Si ya tiene member, ir al dashboard
+  const existing = await prisma.member.findUnique({
     where: { clerkUserId: user.id },
   });
-  if (yaVinculado) redirect("/dashboard");
+  if (existing) redirect("/");
 
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">
