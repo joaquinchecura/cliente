@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X, UserButton } from "lucide-react";
+import { Menu, X } from "lucide-react";
+import { UserButton } from "@clerk/nextjs";
 
 interface NavItem {
   href: string;
