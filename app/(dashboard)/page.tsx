@@ -1,10 +1,11 @@
+// app/(dashboard)/page.tsx
 export const dynamic = 'force-dynamic';
 
 import { getCurrentMember } from "@/lib/member";
 import { prisma } from "@/lib/prisma";
 import { 
   Calendar, Dumbbell, TrendingUp, QrCode, 
-  CreditCard, AlertCircle 
+  AlertCircle, Clock, ShieldCheck 
 } from "lucide-react";
 import Link from "next/link";
 
@@ -20,54 +21,140 @@ export default async function DashboardPage() {
   ]);
 
   const activeMembership = member.memberships[0];
+  const isPending = member.status === "PENDING";
   const isOverdue = member.status === "OVERDUE";
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold">¡Hola, {member.firstName}! 👋</h2>
-        <p className="text-zinc-400 mt-1">Este es tu resumen</p>
+        <h2 className="text-3xl font-bold text-white">
+          ¡Hola, {member.firstName}! 👋
+        </h2>
+        <p className="text-zinc-400 mt-1">Este es tu resumen de hoy</p>
       </div>
 
-      {isOverdue && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3 text-red-400">
-          <AlertCircle size={20} />
-          <p className="text-sm">Tu membresía está vencida. Contactá a recepción para renovar.</p>
-        </div>
-      )}
-
-      {activeMembership && (
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex items-center justify-between">
-          <div>
-            <p className="text-sm text-blue-400 font-medium">Membresía Activa</p>
-            <p className="text-white font-semibold">{activeMembership.plan.name}</p>
+      {/* Estado Pendiente */}
+      {isPending && (
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5 flex items-start gap-4">
+          <div className="p-2 bg-amber-500/20 rounded-lg">
+            <Clock size={24} className="text-amber-400" />
           </div>
-          <p className="text-xs text-zinc-500">Vence: {new Date(activeMembership.endDate).toLocaleDateString("es-AR")}</p>
+          <div className="flex-1">
+            <h3 className="font-semibold text-amber-400">Cuenta pendiente de aprobación</h3>
+            <p className="text-sm text-amber-500/70 mt-1">
+              Tu cuenta está siendo revisada por el equipo de Cultiva. 
+              Te notificaremos cuando esté activa.
+            </p>
+          </div>
         </div>
       )}
 
+      {/* Membresía Vencida */}
+      {isOverdue && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-5 flex items-start gap-4">
+          <div className="p-2 bg-red-500/20 rounded-lg">
+            <AlertCircle size={24} className="text-red-400" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-red-400">Membresía vencida</h3>
+            <p className="text-sm text-red-500/70 mt-1">
+              Contactá a recepción para renovar tu membresía.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Membresía Activa */}
+      {activeMembership && !isPending && (
+        <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-2 bg-blue-500/20 rounded-lg">
+              <ShieldCheck size={24} className="text-blue-400" />
+            </div>
+            <div>
+              <p className="text-sm text-blue-400 font-medium">Membresía Activa</p>
+              <p className="text-white font-semibold text-lg">{activeMembership.plan.name}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-zinc-500">Vence</p>
+            <p className="text-sm text-zinc-300 font-medium">
+              {new Date(activeMembership.endDate).toLocaleDateString("es-AR", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link href="/clases" className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
-          <Calendar className="text-blue-400 mb-3" size={24} />
-          <p className="text-2xl font-bold">{bookingsCount}</p>
-          <p className="text-sm text-zinc-500">Reservas</p>
+        <Link href="/clases" className="group bg-zinc-900 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all duration-200">
+          <div className="p-3 bg-blue-500/10 rounded-xl w-fit mb-4 group-hover:bg-blue-500/20 transition-colors">
+            <Calendar className="text-blue-400" size={24} />
+          </div>
+          <p className="text-3xl font-bold text-white">{bookingsCount}</p>
+          <p className="text-sm text-zinc-500 mt-1">Reservas</p>
         </Link>
-        <Link href="/rutina" className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
-          <Dumbbell className="text-green-400 mb-3" size={24} />
-          <p className="text-2xl font-bold">{routinesCount}</p>
-          <p className="text-sm text-zinc-500">Rutinas</p>
+
+        <Link href="/rutina" className="group bg-zinc-900 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all duration-200">
+          <div className="p-3 bg-green-500/10 rounded-xl w-fit mb-4 group-hover:bg-green-500/20 transition-colors">
+            <Dumbbell className="text-green-400" size={24} />
+          </div>
+          <p className="text-3xl font-bold text-white">{routinesCount}</p>
+          <p className="text-sm text-zinc-500 mt-1">Rutinas</p>
         </Link>
-        <Link href="/asistencias" className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
-          <QrCode className="text-purple-400 mb-3" size={24} />
-          <p className="text-2xl font-bold">{attendancesCount}</p>
-          <p className="text-sm text-zinc-500">Asistencias</p>
+
+        <Link href="/asistencias" className="group bg-zinc-900 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all duration-200">
+          <div className="p-3 bg-purple-500/10 rounded-xl w-fit mb-4 group-hover:bg-purple-500/20 transition-colors">
+            <QrCode className="text-purple-400" size={24} />
+          </div>
+          <p className="text-3xl font-bold text-white">{attendancesCount}</p>
+          <p className="text-sm text-zinc-500 mt-1">Asistencias</p>
         </Link>
-        <Link href="/progreso" className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors">
-          <TrendingUp className="text-orange-400 mb-3" size={24} />
-          <p className="text-2xl font-bold">{lastWeight ? `${Number(lastWeight.weight)} kg` : "—"}</p>
-          <p className="text-sm text-zinc-500">Último peso</p>
+
+        <Link href="/progreso" className="group bg-zinc-900 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all duration-200">
+          <div className="p-3 bg-orange-500/10 rounded-xl w-fit mb-4 group-hover:bg-orange-500/20 transition-colors">
+            <TrendingUp className="text-orange-400" size={24} />
+          </div>
+          <p className="text-3xl font-bold text-white">
+            {lastWeight ? `${Number(lastWeight.weight)}` : "—"}
+          </p>
+          <p className="text-sm text-zinc-500 mt-1">
+            {lastWeight ? "kg (último peso)" : "Sin registros"}
+          </p>
         </Link>
       </div>
+
+      {/* Quick Actions */}
+      {!isPending && (
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+          <h3 className="font-semibold text-white mb-4">Acciones Rápidas</h3>
+          <div className="flex flex-wrap gap-3">
+            <Link 
+              href="/clases" 
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+            >
+              Reservar Clase
+            </Link>
+            <Link 
+              href="/asistencias" 
+              className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-sm font-medium hover:bg-zinc-700 transition-colors"
+            >
+              Ver mi QR
+            </Link>
+            <Link 
+              href="/progreso" 
+              className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-sm font-medium hover:bg-zinc-700 transition-colors"
+            >
+              Registrar Peso
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
