@@ -1,10 +1,10 @@
-import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { 
   Home, Calendar, Dumbbell, TrendingUp, 
   QrCode, CreditCard, Newspaper, User 
 } from "lucide-react";
 import MobileMenu from "./MobileMenu";
+import UserMenu from "./UserMenu";
 
 const navItems = [
   { href: "/", label: "Inicio", icon: Home },
@@ -52,14 +52,11 @@ export default function DashboardLayout({
         </nav>
         
         <div className="p-4 border-t border-zinc-800">
-          <div className="flex items-center gap-3 px-3 py-2">
-            <UserButton afterSignOutUrl="/sign-in" />
-            <span className="text-sm text-zinc-400">Mi Cuenta</span>
-          </div>
+          <UserMenu />
         </div>
       </aside>
 
-      {/* Mobile Header + Menu (Client Component) */}
+      {/* Mobile Header + Menu */}
       <MobileMenu />
 
       {/* Main Content */}
