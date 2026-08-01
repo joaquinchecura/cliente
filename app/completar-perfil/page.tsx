@@ -11,12 +11,13 @@ async function vincularCuenta(formData: FormData) {
   const dni = formData.get("dni") as string;
   const phone = formData.get("phone") as string;
 
+  // Buscar member por DNI + teléfono
   const member = await prisma.member.findFirst({
     where: { dni, phone },
   });
 
   if (!member) {
-    // Crear nuevo
+    // Crear nuevo member
     await prisma.member.create({
       data: {
         clerkUserId: clerkId,
@@ -32,8 +33,14 @@ async function vincularCuenta(formData: FormData) {
         createdBy: "self-registration",
       },
     });
-  } else {
-    // Vincular existente
+  } else if (!member.clerkUserId) {
+    // Member existe pero no tiene clerkUserId → vincular
+    await prisma.member.update({
+      where: { id: member.id },
+      data: { clerkUserId: clerkId },
+    });
+  } else if (member.clerkUserId !== clerkId) {
+    // Member existe con OTRO clerkUserId → actualizar al nuevo
     await prisma.member.update({
       where: { id: member.id },
       data: { clerkUserId: clerkId },
@@ -48,7 +55,7 @@ export default async function CompletarPerfilPage() {
   const user = await currentUser();
   if (!user) redirect("/sign-in");
 
-  // Si ya tiene member, ir al dashboard
+  // Si ya tiene member vinculado con este clerkUserId, ir al dashboard
   const existing = await prisma.member.findUnique({
     where: { clerkUserId: user.id },
   });
