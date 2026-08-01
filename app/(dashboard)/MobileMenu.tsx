@@ -2,20 +2,30 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { 
+  Home, Calendar, Dumbbell, TrendingUp, 
+  QrCode, CreditCard, Newspaper, User,
+  Menu, X 
+} from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 
-interface NavItem {
-  href: string;
-  label: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-}
+const navItems = [
+  { href: "/", label: "Inicio", icon: Home },
+  { href: "/clases", label: "Clases", icon: Calendar },
+  { href: "/rutina", label: "Mi Rutina", icon: Dumbbell },
+  { href: "/progreso", label: "Progreso", icon: TrendingUp },
+  { href: "/asistencias", label: "Asistencias", icon: QrCode },
+  { href: "/pagos", label: "Pagos", icon: CreditCard },
+  { href: "/noticias", label: "Noticias", icon: Newspaper },
+  { href: "/perfil", label: "Perfil", icon: User },
+];
 
-export default function MobileMenu({ navItems }: { navItems: NavItem[] }) {
+export default function MobileMenu() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <>
+      {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-zinc-900 border-b border-zinc-800 z-50 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -31,6 +41,7 @@ export default function MobileMenu({ navItems }: { navItems: NavItem[] }) {
         </button>
       </div>
 
+      {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 bg-zinc-950 z-40 pt-16">
           <nav className="p-4 space-y-1">

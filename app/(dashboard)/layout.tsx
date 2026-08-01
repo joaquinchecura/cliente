@@ -59,8 +59,8 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      {/* Mobile Header */}
-      <MobileMenu navItems={navItems} />
+      {/* Mobile Header + Menu (Client Component) */}
+      <MobileMenu />
 
       {/* Main Content */}
       <main className="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8 min-h-screen">
