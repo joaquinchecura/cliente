@@ -11,16 +11,16 @@ import {
   Legend,
 } from "recharts";
 
-interface Record {
+interface ChartRecord {
   createdAt: string;
-  weight: string | number;
-  bodyFatPercent: string | number | null;
-  musclePercent: string | number | null;
-  bmi: string | number | null;
+  weight: number;
+  bodyFatPercent: number | null;
+  musclePercent: number | null;
+  bmi: number | null;
 }
 
 interface Props {
-  records: Record[];
+  records: ChartRecord[];
 }
 
 export default function ProgresoCharts({ records }: Props) {
@@ -29,10 +29,10 @@ export default function ProgresoCharts({ records }: Props) {
       day: "numeric",
       month: "short",
     }),
-    peso: Number(r.weight),
-    grasa: r.bodyFatPercent ? Number(r.bodyFatPercent) : null,
-    musculo: r.musclePercent ? Number(r.musclePercent) : null,
-    bmi: r.bmi ? Number(r.bmi) : null,
+    peso: r.weight,
+    grasa: r.bodyFatPercent,
+    musculo: r.musclePercent,
+    bmi: r.bmi,
   }));
 
   return (

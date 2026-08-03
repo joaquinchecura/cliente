@@ -23,6 +23,15 @@ export default async function ProgresoPage() {
     ? Number(lastRecord.weight) - Number(previousRecord.weight) 
     : null;
 
+  // Serializar para el Client Component (ProgresoCharts)
+  const chartRecords = [...records].reverse().map(r => ({
+    createdAt: r.createdAt.toISOString(),
+    weight: Number(r.weight),
+    bodyFatPercent: r.bodyFatPercent ? Number(r.bodyFatPercent) : null,
+    musclePercent: r.musclePercent ? Number(r.musclePercent) : null,
+    bmi: r.bmi ? Number(r.bmi) : null,
+  }));
+
   return (
     <div className="space-y-6">
       <div>
@@ -89,7 +98,7 @@ export default async function ProgresoPage() {
       </div>
 
       {/* Gráficos */}
-      {records.length > 1 && <ProgresoCharts records={[...records].reverse()} />}
+      {records.length > 1 && <ProgresoCharts records={chartRecords} />}
 
       {/* Formulario nuevo registro */}
       <NuevoRegistro />
