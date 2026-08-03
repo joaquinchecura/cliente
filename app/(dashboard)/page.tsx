@@ -12,12 +12,12 @@ import Link from "next/link";
 export default async function DashboardPage() {
   const member = await getCurrentMember();
 
-  const [bookingsCount, routinesCount, attendancesCount, paymentsCount, lastWeight] = await Promise.all([
+  const [bookingsCount, routinesCount, attendancesCount, paymentsCount, lastComp] = await Promise.all([
     prisma.booking.count({ where: { memberId: member.id, status: "CONFIRMED" } }),
     prisma.routine.count({ where: { memberId: member.id, isActive: true } }),
     prisma.attendance.count({ where: { memberId: member.id } }),
     prisma.payment.count({ where: { memberId: member.id, status: "COMPLETED" } }),
-    prisma.weightLog.findFirst({ where: { memberId: member.id }, orderBy: { date: "desc" } }),
+    prisma.bodyComposition.findFirst({ where: { memberId: member.id }, orderBy: { createdAt: "desc" } }),
   ]);
 
   const activeMembership = member.memberships[0];
@@ -121,10 +121,10 @@ export default async function DashboardPage() {
             <TrendingUp className="text-orange-400" size={24} />
           </div>
           <p className="text-3xl font-bold text-white">
-            {lastWeight ? `${Number(lastWeight.weight)}` : "—"}
+            {lastComp ? `${Number(lastComp.weight)}` : "—"}
           </p>
           <p className="text-sm text-zinc-500 mt-1">
-            {lastWeight ? "kg (último peso)" : "Sin registros"}
+            {lastComp ? "kg (último peso)" : "Sin registros"}
           </p>
         </Link>
       </div>
