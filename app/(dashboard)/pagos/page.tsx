@@ -2,70 +2,104 @@ export const dynamic = 'force-dynamic';
 
 import { getCurrentMember } from "@/lib/member";
 import { prisma } from "@/lib/prisma";
-import { formatCurrency, formatDate } from "@/lib/utils";
-import { CreditCard, CheckCircle, Clock, XCircle } from "lucide-react";
-
-const statusConfig = {
-  COMPLETED: { icon: CheckCircle, color: "text-green-400", bg: "bg-green-500/10", label: "Completado" },
-  PENDING: { icon: Clock, color: "text-yellow-400", bg: "bg-yellow-500/10", label: "Pendiente" },
-  FAILED: { icon: XCircle, color: "text-red-400", bg: "bg-red-500/10", label: "Fallido" },
-  REFUNDED: { icon: XCircle, color: "text-zinc-400", bg: "bg-zinc-500/10", label: "Reembolsado" },
-};
-
-const methodLabels: Record<string, string> = {
-  CASH: "Efectivo",
-  TRANSFER: "Transferencia",
-  MERCADOPAGO: "Mercado Pago",
-  CARD: "Tarjeta",
-  OTHER: "Otro",
-};
+import { CreditCard, DollarSign, Calendar, CheckCircle, Clock, AlertCircle } from "lucide-react";
 
 export default async function PagosPage() {
   const member = await getCurrentMember();
 
   const payments = await prisma.payment.findMany({
     where: { memberId: member.id },
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: 'desc' },
   });
 
   const totalPagado = payments
-    .filter((p) => p.status === "COMPLETED")
+    .filter(p => p.status === 'COMPLETED')
     .reduce((sum, p) => sum + Number(p.amount), 0);
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">💳 Mis Pagos</h2>
-
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-        <p className="text-sm text-zinc-500">Total pagado</p>
-        <p className="text-3xl font-bold text-white mt-1">{formatCurrency(totalPagado)}</p>
+      <div>
+        <h2 className="text-2xl font-bold text-white">Mis Pagos</h2>
+        <p className="text-zinc-400 mt-1">Historial de pagos realizados</p>
       </div>
 
-      {payments.length === 0 ? (
-        <p className="text-zinc-600 text-sm">No hay pagos registrados.</p>
-      ) : (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl divide-y divide-zinc-800">
-          {payments.map((p) => {
-            const config = statusConfig[p.status as keyof typeof statusConfig];
-            const Icon = config.icon;
-            return (
-              <div key={p.id} className="px-4 py-4 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${config.bg}`}>
-                    <Icon size={16} className={config.color} />
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-center">
+          <p className="text-2xl font-bold text-white">${totalPagado.toLocaleString('es-AR')}</p>
+          <p className="text-xs text-zinc-500 mt-1">Total pagado</p>
+        </div>
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-center">
+          <p className="text-2xl font-bold text-white">{payments.length}</p>
+          <p className="text-xs text-zinc-500 mt-1">Pagos realizados</p>
+        </div>
+      </div>
+
+      {/* Lista de pagos */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+        <div className="px-4 py-3 border-b border-zinc-800">
+          <h3 className="font-semibold text-white">Historial</h3>
+        </div>
+        {payments.length === 0 ? (
+          <div className="p-8 text-center text-zinc-500">
+            <CreditCard className="mx-auto mb-2 text-zinc-600" size={40} />
+            <p>Sin pagos registrados</p>
+            <p className="text-sm text-zinc-600 mt-1">Contactá a recepción para más información</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-zinc-800">
+            {payments.map((p) => (
+              <div key={p.id} className="px-4 py-4 flex items-center justify-between hover:bg-zinc-800/50 transition-colors">
+                <div className="flex items-center gap-4">
+                  <div className={`p-2 rounded-lg ${
+                    p.status === 'COMPLETED' ? 'bg-green-500/10' :
+                    p.status === 'PENDING' ? 'bg-amber-500/10' :
+                    'bg-red-500/10'
+                  }`}>
+                    {p.status === 'COMPLETED' ? (
+                      <CheckCircle size={20} className="text-green-400" />
+                    ) : p.status === 'PENDING' ? (
+                      <Clock size={20} className="text-amber-400" />
+                    ) : (
+                      <AlertCircle size={20} className="text-red-400" />
+                    )}
                   </div>
                   <div>
-                    <p className="font-medium text-white">{p.concept}</p>
-                    <p className="text-xs text-zinc-500">{methodLabels[p.method]} • {formatDate(p.createdAt)}</p>
-                    {p.reference && <p className="text-xs text-zinc-600">Ref: {p.reference}</p>}
+                    <p className="text-white font-medium">{p.concept}</p>
+                    <div className="flex items-center gap-3 text-sm text-zinc-500 mt-1">
+                      <span className="flex items-center gap-1">
+                        <Calendar size={12} />
+                        {new Date(p.createdAt).toLocaleDateString('es-AR')}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <DollarSign size={12} />
+                        {p.method === 'CASH' ? 'Efectivo' :
+                         p.method === 'TRANSFER' ? 'Transferencia' :
+                         p.method === 'MERCADOPAGO' ? 'MercadoPago' :
+                         p.method === 'CARD' ? 'Tarjeta' : 'Otro'}
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <p className="font-semibold text-white">{formatCurrency(p.amount)}</p>
+                <div className="text-right">
+                  <p className="text-lg font-bold text-white">
+                    ${Number(p.amount).toLocaleString('es-AR')}
+                  </p>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    p.status === 'COMPLETED' ? 'bg-green-500/10 text-green-400' :
+                    p.status === 'PENDING' ? 'bg-amber-500/10 text-amber-400' :
+                    'bg-red-500/10 text-red-400'
+                  }`}>
+                    {p.status === 'COMPLETED' ? 'Pagado' :
+                     p.status === 'PENDING' ? 'Pendiente' :
+                     p.status === 'FAILED' ? 'Fallido' : 'Reembolsado'}
+                  </span>
+                </div>
               </div>
-            );
-          })}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
