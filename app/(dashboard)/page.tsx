@@ -5,9 +5,37 @@ import { getCurrentMember } from "@/lib/member";
 import { prisma } from "@/lib/prisma";
 import { 
   Calendar, Dumbbell, TrendingUp, QrCode, 
-  AlertCircle, Clock, ShieldCheck 
+  AlertCircle, Clock, ShieldCheck, Newspaper 
 } from "lucide-react";
 import Link from "next/link";
+
+// Componente server para noticias
+async function NoticiasPreview() {
+  const news = await prisma.news.findMany({
+    where: { isActive: true },
+    orderBy: { createdAt: 'desc' },
+    take: 3,
+  });
+
+  if (news.length === 0) {
+    return <p className="text-sm text-zinc-500">No hay novedades</p>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {news.map((item) => (
+        <Link
+          key={item.id}
+          href="/noticias"
+          className="block p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors"
+        >
+          <p className="text-sm font-medium text-white line-clamp-1">{item.title}</p>
+          <p className="text-xs text-zinc-500 line-clamp-2 mt-1">{item.content}</p>
+        </Link>
+      ))}
+    </div>
+  );
+}
 
 export default async function DashboardPage() {
   const member = await getCurrentMember();
@@ -129,6 +157,22 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
+      {/* Noticias recientes */}
+      {!isPending && (
+        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-white flex items-center gap-2">
+              <Newspaper size={18} className="text-blue-400" />
+              Últimas Noticias
+            </h3>
+            <Link href="/noticias" className="text-sm text-blue-400 hover:text-blue-300">
+              Ver todas →
+            </Link>
+          </div>
+          <NoticiasPreview />
+        </div>
+      )}
+
       {/* Quick Actions */}
       {!isPending && (
         <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
@@ -151,6 +195,12 @@ export default async function DashboardPage() {
               className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-sm font-medium hover:bg-zinc-700 transition-colors"
             >
               Registrar Peso
+            </Link>
+            <Link 
+              href="/noticias" 
+              className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-sm font-medium hover:bg-zinc-700 transition-colors"
+            >
+              Noticias
             </Link>
           </div>
         </div>
