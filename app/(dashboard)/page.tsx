@@ -188,7 +188,7 @@ export default async function DashboardPage() {
               href="/asistencias" 
               className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-sm font-medium hover:bg-zinc-700 transition-colors"
             >
-              Ver mi QR
+              QR + Asistencia 
             </Link>
             <Link 
               href="/progreso" 
