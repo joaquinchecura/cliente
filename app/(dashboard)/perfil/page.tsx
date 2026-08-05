@@ -8,7 +8,7 @@ import {
   Shield, CreditCard, Dumbbell, TrendingUp, Pencil 
 } from "lucide-react";
 import Link from "next/link";
-import EditarPerfil from "./EditarPerfil.tsx";
+import EditarPerfil from "./EditarPerfil";
 
 export default async function PerfilPage() {
   const member = await getCurrentMember();
