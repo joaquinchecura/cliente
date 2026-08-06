@@ -2,9 +2,8 @@ export const dynamic = 'force-dynamic';
 
 import { getCurrentMember } from "@/lib/member";
 import { prisma } from "@/lib/prisma";
-import { Dumbbell, Target, Calendar } from "lucide-react";
+import { Dumbbell, Target, Calendar, Tag } from "lucide-react";
 
-const diasSemana = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const goals: Record<string, string> = {
   HYPERTROPHY: "Hipertrofia",
   STRENGTH: "Fuerza",
@@ -14,15 +13,34 @@ const goals: Record<string, string> = {
   REHABILITATION: "Rehabilitación",
 };
 
+const exerciseTypeLabels: Record<string, string> = {
+  STRENGTH: "Fuerza",
+  CARDIO: "Cardio",
+  FUNCTIONAL: "Funcional",
+  MOBILITY: "Movilidad",
+  STRETCHING: "Estiramiento",
+  PLYOMETRIC: "Pliometría",
+  BALANCE: "Equilibrio",
+  TECHNIQUE: "Técnica",
+  WARMUP: "Calentamiento",
+  COOLDOWN: "Vuelta a la calma",
+  OTHER: "Otro",
+};
+
 export default async function RutinaPage() {
   const member = await getCurrentMember();
 
   const routine = await prisma.routine.findFirst({
     where: { memberId: member.id, isActive: true },
     include: {
-      exercises: {
-        include: { exercise: true },
-        orderBy: [{ dayOfWeek: "asc" }, { order: "asc" }],
+      days: {
+        orderBy: { order: "asc" },
+        include: {
+          exercises: {
+            orderBy: { order: "asc" },
+            include: { exercise: true },
+          },
+        },
       },
     },
   });
@@ -40,41 +58,56 @@ export default async function RutinaPage() {
     );
   }
 
-  const ejerciciosPorDia = routine.exercises.reduce((acc, ex) => {
-    const dia = ex.dayOfWeek;
-    if (!acc[dia]) acc[dia] = [];
-    acc[dia].push(ex);
-    return acc;
-  }, {} as Record<number, typeof routine.exercises>);
-
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
         <h2 className="text-2xl font-bold">🎯 {routine.name}</h2>
         <div className="flex flex-wrap gap-4 mt-2 text-sm text-zinc-400">
-          <span className="flex items-center gap-1"><Target size={14} /> {goals[routine.goal]}</span>
-          <span className="flex items-center gap-1"><Calendar size={14} /> {routine.frequencyPerWeek} días/semana</span>
+          {routine.goal && (
+            <span className="flex items-center gap-1">
+              <Target size={14} /> {goals[routine.goal]}
+            </span>
+          )}
+          {routine.frequencyPerWeek && (
+            <span className="flex items-center gap-1">
+              <Calendar size={14} /> {routine.frequencyPerWeek} días/semana
+            </span>
+          )}
         </div>
         {routine.notes && <p className="text-sm text-zinc-500 mt-2">{routine.notes}</p>}
       </div>
 
+      {/* Días */}
       <div className="space-y-4">
-        {Object.entries(ejerciciosPorDia).map(([dia, ejercicios]) => (
-          <div key={dia} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
-            <div className="bg-zinc-800/50 px-4 py-2 text-sm font-medium text-zinc-300">
-              {diasSemana[Number(dia)]}
+        {routine.days.map((day) => (
+          <div key={day.id} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+            <div className="bg-zinc-800/50 px-4 py-2 text-sm font-medium text-zinc-300 flex items-center justify-between">
+              <span>{day.dayName}</span>
+              <span className="text-xs text-zinc-500">{day.exercises.length} ejercicios</span>
             </div>
             <div className="divide-y divide-zinc-800">
-              {ejercicios.map((ex) => (
-                <div key={ex.id} className="px-4 py-3 flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-white">{ex.exercise.name}</p>
-                    <p className="text-xs text-zinc-500">{ex.exercise.category} {ex.exercise.equipment && `• ${ex.exercise.equipment}`}</p>
+              {day.exercises.map((re) => (
+                <div key={re.id} className="px-4 py-3 flex items-center justify-between">
+                  <div className="min-w-0">
+                    <p className="font-medium text-white truncate">{re.exercise.name}</p>
+                    <div className="flex items-center gap-2 text-xs text-zinc-500 mt-0.5">
+                      <span>{exerciseTypeLabels[re.exercise.type] || re.exercise.type}</span>
+                      {re.exercise.equipment && (
+                        <span>• {re.exercise.equipment}</span>
+                      )}
+                      {re.exercise.tags.length > 0 && (
+                        <span className="flex items-center gap-0.5">
+                          <Tag size={10} />
+                          {re.exercise.tags.slice(0, 2).join(", ")}
+                          {re.exercise.tags.length > 2 && "..."}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-right text-sm text-zinc-400">
-                    <p>{ex.sets} series x {ex.reps}</p>
-                    {ex.weight && <p>{Number(ex.weight)} kg</p>}
-                    {ex.restSeconds && <p className="text-xs text-zinc-600">{ex.restSeconds}s descanso</p>}
+                  <div className="text-right text-sm text-zinc-400 shrink-0 ml-4">
+                    <p>{re.sets} series x {re.reps}</p>
+                    {re.rest && <p className="text-xs text-zinc-600">{re.rest} descanso</p>}
                   </div>
                 </div>
               ))}
