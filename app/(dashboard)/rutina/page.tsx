@@ -75,7 +75,7 @@ export default async function RutinaPage() {
             </span>
           )}
         </div>
-        {routine.notes && <p className="text-sm text-zinc-500 mt-2">{routine.notes}</p>}
+        {routine.description && <p className="text-sm text-zinc-500 mt-2">{routine.description}</p>}
       </div>
 
       {/* Días */}
