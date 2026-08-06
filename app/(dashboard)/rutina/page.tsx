@@ -1,8 +1,10 @@
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-import { getCurrentMember } from "@/lib/member";
-import { prisma } from "@/lib/prisma";
-import { Dumbbell, Target, Calendar, Tag } from "lucide-react";
+import { getMyRoutines } from "@/app/actions/routines";
+import { Dumbbell, Target, Calendar, CheckCircle } from "lucide-react";
+import Link from "next/link";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 const goals: Record<string, string> = {
   HYPERTROPHY: "Hipertrofia",
@@ -13,57 +15,30 @@ const goals: Record<string, string> = {
   REHABILITATION: "Rehabilitación",
 };
 
-const exerciseTypeLabels: Record<string, string> = {
-  STRENGTH: "Fuerza",
-  CARDIO: "Cardio",
-  FUNCTIONAL: "Funcional",
-  MOBILITY: "Movilidad",
-  STRETCHING: "Estiramiento",
-  PLYOMETRIC: "Pliometría",
-  BALANCE: "Equilibrio",
-  TECHNIQUE: "Técnica",
-  WARMUP: "Calentamiento",
-  COOLDOWN: "Vuelta a la calma",
-  OTHER: "Otro",
-};
-
 export default async function RutinaPage() {
-  const member = await getCurrentMember();
+  const routines = await getMyRoutines();
 
-  const routine = await prisma.routine.findFirst({
-    where: { memberId: member.id, isActive: true },
-    include: {
-      days: {
-        orderBy: { order: "asc" },
-        include: {
-          exercises: {
-            orderBy: { order: "asc" },
-            include: { exercise: true },
-          },
-        },
-      },
-    },
-  });
-
-  if (!routine) {
+  if (routines.length === 0) {
     return (
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold">🎯 Mi Rutina</h2>
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 text-center">
-          <Dumbbell className="mx-auto text-zinc-600 mb-3" size={40} />
-          <p className="text-zinc-400">No tenés una rutina asignada.</p>
-          <p className="text-sm text-zinc-600 mt-1">Consultá con tu entrenador.</p>
+        <h2 className="text-2xl font-bold text-slate-900">🎯 Mi Rutina</h2>
+        <div className="bg-white border border-slate-200 rounded-xl p-8 text-center">
+          <Dumbbell className="mx-auto text-slate-300 mb-3" size={40} />
+          <p className="text-slate-500">No tenés una rutina asignada.</p>
+          <p className="text-sm text-slate-400 mt-1">Consultá con tu entrenador.</p>
         </div>
       </div>
     );
   }
 
+  const routine = routines[0]; // La rutina activa más reciente
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold">🎯 {routine.name}</h2>
-        <div className="flex flex-wrap gap-4 mt-2 text-sm text-zinc-400">
+        <h2 className="text-2xl font-bold text-slate-900">🎯 {routine.name}</h2>
+        <div className="flex flex-wrap gap-4 mt-2 text-sm text-slate-500">
           {routine.goal && (
             <span className="flex items-center gap-1">
               <Target size={14} /> {goals[routine.goal]}
@@ -75,44 +50,39 @@ export default async function RutinaPage() {
             </span>
           )}
         </div>
-        {routine.description && <p className="text-sm text-zinc-500 mt-2">{routine.description}</p>}
+        {routine.description && (
+          <p className="text-sm text-slate-500 mt-2">{routine.description}</p>
+        )}
       </div>
 
       {/* Días */}
       <div className="space-y-4">
         {routine.days.map((day) => (
-          <div key={day.id} className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
-            <div className="bg-zinc-800/50 px-4 py-2 text-sm font-medium text-zinc-300 flex items-center justify-between">
+          <Card key={day.id} className="bg-white border-slate-200 overflow-hidden">
+            <div className="bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 flex items-center justify-between border-b border-slate-100">
               <span>{day.dayName}</span>
-              <span className="text-xs text-zinc-500">{day.exercises.length} ejercicios</span>
+              <span className="text-xs text-slate-500">{day.exercises.length} ejercicios</span>
             </div>
-            <div className="divide-y divide-zinc-800">
+            <div className="divide-y divide-slate-100">
               {day.exercises.map((re) => (
                 <div key={re.id} className="px-4 py-3 flex items-center justify-between">
                   <div className="min-w-0">
-                    <p className="font-medium text-white truncate">{re.exercise.name}</p>
-                    <div className="flex items-center gap-2 text-xs text-zinc-500 mt-0.5">
-                      <span>{exerciseTypeLabels[re.exercise.type] || re.exercise.type}</span>
+                    <p className="font-medium text-slate-900 truncate">{re.exercise.name}</p>
+                    <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                      <span>{re.exercise.type}</span>
                       {re.exercise.equipment && (
                         <span>• {re.exercise.equipment}</span>
                       )}
-                      {re.exercise.tags.length > 0 && (
-                        <span className="flex items-center gap-0.5">
-                          <Tag size={10} />
-                          {re.exercise.tags.slice(0, 2).join(", ")}
-                          {re.exercise.tags.length > 2 && "..."}
-                        </span>
-                      )}
                     </div>
                   </div>
-                  <div className="text-right text-sm text-zinc-400 shrink-0 ml-4">
+                  <div className="text-right text-sm text-slate-600 shrink-0 ml-4">
                     <p>{re.sets} series x {re.reps}</p>
-                    {re.rest && <p className="text-xs text-zinc-600">{re.rest} descanso</p>}
+                    {re.rest && <p className="text-xs text-slate-400">{re.rest} descanso</p>}
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         ))}
       </div>
     </div>
