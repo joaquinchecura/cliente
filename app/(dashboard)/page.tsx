@@ -43,7 +43,7 @@ export default async function DashboardPage() {
   const [bookingsCount, routinesCount, attendancesCount, paymentsCount, lastComp] = await Promise.all([
     prisma.booking.count({ where: { memberId: member.id, status: "CONFIRMED" } }),
     prisma.routine.count({ where: { memberId: member.id, isActive: true } }),
-    prisma.attendance.count({ where: { memberId: member.id } }),
+    prisma.attendance.count({ where: { memberId: member.id, status: "ALLOWED" } }),
     prisma.payment.count({ where: { memberId: member.id, status: "COMPLETED" } }),
     prisma.bodyComposition.findFirst({ where: { memberId: member.id }, orderBy: { createdAt: "desc" } }),
   ]);
@@ -51,6 +51,15 @@ export default async function DashboardPage() {
   const activeMembership = member.memberships[0];
   const isPending = member.status === "PENDING";
   const isOverdue = member.status === "OVERDUE";
+
+  // Calcular estado del IMC
+  const bmi = lastComp?.bmi ? Number(lastComp.bmi) : null;
+  const bmiLabel = bmi 
+    ? bmi < 18.5 ? 'Bajo peso'
+      : bmi < 25 ? 'Normal'
+      : bmi < 30 ? 'Sobrepeso'
+      : 'Obesidad'
+    : null;
 
   return (
     <div className="space-y-6">
@@ -149,10 +158,10 @@ export default async function DashboardPage() {
             <TrendingUp className="text-orange-400" size={24} />
           </div>
           <p className="text-3xl font-bold text-white">
-            {lastComp ? `${Number(lastComp.weight)}` : "—"}
+            {bmi ? bmi.toFixed(1) : "—"}
           </p>
           <p className="text-sm text-zinc-500 mt-1">
-            {lastComp ? "kg (último peso)" : "Sin registros"}
+            {bmiLabel || "Sin registros"}
           </p>
         </Link>
       </div>

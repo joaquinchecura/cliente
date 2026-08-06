@@ -32,8 +32,8 @@ export default function DashboardLayout({
               <span className="text-xl font-bold text-white">C</span>
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white leading-tight">Cultiva</h1>
-              <p className="text-xs text-zinc-500">Tu Gimnasio</p>
+              <h1 className="text-lg font-bold text-white leading-tight">Cultiva Fitness</h1>
+              <p className="text-xs text-zinc-500">CLIENTE</p>
             </div>
           </div>
         </div>
