@@ -101,3 +101,62 @@ export async function deleteProgressLog(logId: string) {
 
   revalidatePath("/rutina");
 }
+
+export async function getProgressHistory(days: number = 30) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("No autenticado");
+
+  const member = await prisma.member.findFirst({
+    where: { clerkUserId: userId },
+  });
+  if (!member) throw new Error("Miembro no encontrado");
+
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+
+  const logs = await prisma.progressLog.findMany({
+    where: {
+      memberId: member.id,
+      date: {
+        gte: startDate,
+      },
+    },
+    include: {
+      exercise: {
+        select: { name: true, type: true },
+      },
+      routine: {
+        select: { name: true },
+      },
+    },
+    orderBy: { date: "desc" },
+  });
+
+  return logs;
+}
+
+export async function getExerciseProgress(exerciseId: string, days: number = 90) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("No autenticado");
+
+  const member = await prisma.member.findFirst({
+    where: { clerkUserId: userId },
+  });
+  if (!member) throw new Error("Miembro no encontrado");
+
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+
+  const logs = await prisma.progressLog.findMany({
+    where: {
+      memberId: member.id,
+      exerciseId,
+      date: {
+        gte: startDate,
+      },
+    },
+    orderBy: { date: "asc" },
+  });
+
+  return logs;
+}

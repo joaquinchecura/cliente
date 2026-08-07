@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle, Trash2, Plus, Minus } from "lucide-react";
+import { ProgressChart } from "./progress-chart";
 
 interface ProgressTrackerProps {
   routineId: string;
@@ -19,6 +20,7 @@ interface ProgressTrackerProps {
     repsCompleted: string;
     weightUsed: number;
     notes: string | null;
+    date: string; // ← AGREGADO
   }[];
 }
 
@@ -63,6 +65,13 @@ export function ProgressTracker({
       setSaving(false);
     }
   }
+  
+  const exerciseHistory = todayLogs.map((log) => ({
+    date: log.date,
+    weightUsed: log.weightUsed,
+    setsCompleted: log.setsCompleted,
+    repsCompleted: log.repsCompleted,
+  }));
 
   return (
     <div className="mt-2 space-y-2">
@@ -92,6 +101,12 @@ export function ProgressTracker({
             </div>
           ))}
         </div>
+      )}
+      {todayLogs.length > 0 && (
+        <ProgressChart
+          data={exerciseHistory}
+          exerciseName={exerciseName}
+        />
       )}
 
       {/* Botón para agregar */}
