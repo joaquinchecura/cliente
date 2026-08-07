@@ -54,6 +54,15 @@ export async function getTodayProgress(routineId: string, date?: Date) {
         lte: endOfDay,
       },
     },
+    select: {
+      id: true,
+      exerciseId: true,
+      setsCompleted: true,
+      repsCompleted: true,
+      weightUsed: true,
+      notes: true,
+      date: true,
+    },
   });
 
   return logs;
@@ -121,13 +130,15 @@ export async function getProgressHistory(days: number = 30) {
         gte: startDate,
       },
     },
-    include: {
-      exercise: {
-        select: { name: true, type: true },
-      },
-      routine: {
-        select: { name: true },
-      },
+    select: {
+      id: true,
+      exerciseId: true,
+      routineId: true,
+      setsCompleted: true,
+      repsCompleted: true,
+      weightUsed: true,
+      notes: true,
+      date: true,
     },
     orderBy: { date: "desc" },
   });
@@ -154,6 +165,14 @@ export async function getExerciseProgress(exerciseId: string, days: number = 90)
       date: {
         gte: startDate,
       },
+    },
+    select: {
+      id: true,
+      setsCompleted: true,
+      repsCompleted: true,
+      weightUsed: true,
+      notes: true,
+      date: true,
     },
     orderBy: { date: "asc" },
   });

@@ -1,13 +1,12 @@
 export const dynamic = "force-dynamic";
 
 import { getProgressHistory } from "@/app/actions/routines";
-import { Calendar, TrendingUp, Dumbbell, ArrowLeft } from "lucide-react";
+import { Calendar, TrendingUp, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export default async function HistorialPage() {
   const logs = await getProgressHistory(30);
 
-  // Agrupar por fecha
   const grouped = logs.reduce((acc, log) => {
     const date = new Date(log.date).toLocaleDateString("es-AR", {
       weekday: "long",
@@ -53,14 +52,11 @@ export default async function HistorialPage() {
                     className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 flex items-center justify-between"
                   >
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <Dumbbell size={14} className="text-zinc-500" />
-                        <p className="font-medium text-white text-sm">
-                          {(log as any).exercise?.name || "Ejercicio"}
-                        </p>
-                      </div>
-                      <p className="text-xs text-zinc-500 mt-1">
-                        {(log as any).routine?.name || "Rutina"}
+                      <p className="text-xs text-zinc-500">
+                        {new Date(log.date).toLocaleTimeString("es-AR", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </p>
                       {log.notes && (
                         <p className="text-xs text-zinc-600 mt-1">{log.notes}</p>
