@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
+import { revalidatePath } from "next/cache";
 
 export async function getMyRoutines() {
   const { userId } = await auth();
@@ -31,6 +32,33 @@ export async function getMyRoutines() {
   return routines;
 }
 
+export async function getTodayProgress(routineId: string, date?: Date) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("No autenticado");
+
+  const member = await prisma.member.findFirst({
+    where: { clerkUserId: userId },
+  });
+  if (!member) throw new Error("Miembro no encontrado");
+
+  const targetDate = date || new Date();
+  const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
+  const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
+
+  const logs = await prisma.progressLog.findMany({
+    where: {
+      routineId,
+      memberId: member.id,
+      date: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+    },
+  });
+
+  return logs;
+}
+
 export async function logProgress(data: {
   routineId: string;
   exerciseId: string;
@@ -47,7 +75,7 @@ export async function logProgress(data: {
   });
   if (!member) throw new Error("Miembro no encontrado");
 
-  await prisma.progressLog.create({
+  const log = await prisma.progressLog.create({
     data: {
       routineId: data.routineId,
       exerciseId: data.exerciseId,
@@ -58,4 +86,18 @@ export async function logProgress(data: {
       notes: data.notes || null,
     },
   });
+
+  revalidatePath("/rutina");
+  return log;
+}
+
+export async function deleteProgressLog(logId: string) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("No autenticado");
+
+  await prisma.progressLog.delete({
+    where: { id: logId },
+  });
+
+  revalidatePath("/rutina");
 }
