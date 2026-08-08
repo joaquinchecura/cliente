@@ -4,8 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
-
+const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -21,7 +20,12 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="es" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
-        <body className={`${inter.className} bg-zinc-950 text-zinc-100 min-h-screen`}>
+        {/* 
+          ✅ FIX: Sacamos bg-zinc-950 text-zinc-100 hardcodeados
+          Ahora el body usa las variables CSS del :root (oscuro por defecto)
+          Todos los componentes de Shadcn/UI heredan los colores correctos
+        */}
+        <body className={inter.className}>
           {children}
         </body>
       </html>
