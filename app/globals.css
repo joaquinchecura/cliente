@@ -5,7 +5,6 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  /* 🌙 App Cliente — Dark por defecto */
   --color-background: #09090b;
   --color-foreground: #fafafa;
   --color-card: #18181b;
@@ -80,7 +79,6 @@ body {
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* 🌙 ROOT OSCURO — Todo el sistema hereda dark */
 :root {
   --background: #09090b;
   --foreground: #fafafa;
@@ -117,7 +115,6 @@ body {
   --sidebar-ring: #3b82f6;
 }
 
-/* Light mode opcional (si en el futuro querés toggle) */
 .light {
   --background: #fafafa;
   --foreground: #09090b;
@@ -151,16 +148,4 @@ body {
   --sidebar-accent-foreground: #09090b;
   --sidebar-border: #e4e4e7;
   --sidebar-ring: #3b82f6;
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
-  }
 }
