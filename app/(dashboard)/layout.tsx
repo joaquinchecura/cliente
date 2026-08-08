@@ -24,17 +24,17 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-zinc-950 text-zinc-100">
+    <div className="flex min-h-screen bg-background text-foreground">
       {/* Sidebar Desktop */}
-      <aside className="w-64 bg-zinc-900 border-r border-zinc-800 hidden md:flex flex-col fixed h-full z-40">
-        <div className="p-6 border-b border-zinc-800">
+      <aside className="w-64 bg-card border-r border-border hidden md:flex flex-col fixed h-full z-40">
+        <div className="p-6 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center">
-              <span className="text-xl font-bold text-white">C</span>
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
+              <span className="text-xl font-bold text-primary-foreground">C</span>
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white leading-tight">Cultiva Fitness</h1>
-              <p className="text-xs text-zinc-500">CLIENTE</p>
+              <h1 className="text-lg font-bold text-foreground leading-tight">Cultiva Fitness</h1>
+              <p className="text-xs text-muted-foreground">CLIENTE</p>
             </div>
           </div>
         </div>
@@ -44,15 +44,15 @@ export default function DashboardLayout({
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-3 px-3 py-2.5 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-all duration-200 group"
+              className="flex items-center gap-3 px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-all duration-200 group"
             >
-              <item.icon size={18} className="group-hover:text-blue-400 transition-colors" />
+              <item.icon size={18} className="group-hover:text-primary transition-colors" />
               <span>{item.label}</span>
             </Link>
           ))}
         </nav>
         
-        <div className="p-4 border-t border-zinc-800">
+        <div className="p-4 border-t border-border">
           <UserMenu />
         </div>
       </aside>
