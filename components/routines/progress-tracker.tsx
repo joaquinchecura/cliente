@@ -20,7 +20,7 @@ interface ProgressTrackerProps {
     repsCompleted: string;
     weightUsed: number;
     notes: string | null;
-    date: string; // ← AGREGADO
+    date: string;
   }[];
 }
 
@@ -78,13 +78,15 @@ export function ProgressTracker({
       {/* Resumen de hoy */}
       {todayLogs.length > 0 && (
         <div className="space-y-1">
-          <p className="text-xs text-sinc-500 font-medium">Hoy: {totalSetsToday} series completadas</p>
+          <p className="text-xs text-muted-foreground font-medium">
+            Hoy: {totalSetsToday} series completadas
+          </p>
           {todayLogs.map((log) => (
             <div
               key={log.id}
-              className="flex items-center justify-between bg-slate-50 rounded px-2 py-1 text-xs"
+              className="flex items-center justify-between bg-secondary rounded px-2 py-1 text-xs"
             >
-              <span className="text-slate-600">
+              <span className="text-secondary-foreground">
                 {log.setsCompleted}x{log.repsCompleted} @ {log.weightUsed}kg
                 {log.notes && ` — ${log.notes}`}
               </span>
@@ -93,7 +95,7 @@ export function ProgressTracker({
                   type="submit"
                   variant="ghost"
                   size="icon"
-                  className="h-5 w-5 text-red-400 hover:text-red-600"
+                  className="h-5 w-5 text-destructive hover:text-destructive/80"
                 >
                   <Trash2 size={10} />
                 </Button>
@@ -120,10 +122,10 @@ export function ProgressTracker({
           <Plus size={12} /> Registrar serie
         </Button>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-2 bg-slate-50 rounded-lg p-3">
+        <form onSubmit={handleSubmit} className="space-y-2 bg-card border border-border rounded-lg p-3">
           <div className="grid grid-cols-3 gap-2">
             <div className="space-y-1">
-              <Label className="text-[10px] text-slate-500">Series</Label>
+              <Label className="text-[10px] text-muted-foreground">Series</Label>
               <div className="flex items-center gap-1">
                 <Button
                   type="button"
@@ -134,7 +136,7 @@ export function ProgressTracker({
                 >
                   <Minus size={10} />
                 </Button>
-                <span className="w-6 text-center text-sm font-medium">{sets}</span>
+                <span className="w-6 text-center text-sm font-medium text-foreground">{sets}</span>
                 <Button
                   type="button"
                   variant="outline"
@@ -148,23 +150,23 @@ export function ProgressTracker({
             </div>
 
             <div className="space-y-1">
-              <Label className="text-[10px] text-slate-500">Reps</Label>
+              <Label className="text-[10px] text-muted-foreground">Reps</Label>
               <Input
                 value={reps}
                 onChange={(e) => setReps(e.target.value)}
-                className="h-7 text-sm bg-white"
+                className="h-7 text-sm bg-background border-border text-foreground"
               />
             </div>
 
             <div className="space-y-1">
-              <Label className="text-[10px] text-slate-500">Peso (kg)</Label>
+              <Label className="text-[10px] text-muted-foreground">Peso (kg)</Label>
               <Input
                 type="number"
                 step="0.5"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
                 placeholder="0"
-                className="h-7 text-sm bg-white"
+                className="h-7 text-sm bg-background border-border text-foreground"
                 required
               />
             </div>
@@ -174,7 +176,7 @@ export function ProgressTracker({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Notas (opcional)"
-            className="h-7 text-xs bg-white"
+            className="h-7 text-xs bg-background border-border text-foreground placeholder:text-muted-foreground"
           />
 
           <div className="flex gap-2">

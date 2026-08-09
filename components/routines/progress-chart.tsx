@@ -44,7 +44,7 @@ export function ProgressChart({ data, exerciseName }: ProgressChartProps) {
     <div className="mt-2">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+        className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
         <TrendingUp size={12} />
         Ver progreso
@@ -55,50 +55,50 @@ export function ProgressChart({ data, exerciseName }: ProgressChartProps) {
       </button>
 
       {isOpen && (
-        <div className="mt-2 bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-          <p className="text-xs text-zinc-500 mb-3">{exerciseName}</p>
+        <div className="mt-2 bg-card border border-border rounded-lg p-4">
+          <p className="text-xs text-muted-foreground mb-3">{exerciseName}</p>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis
                   dataKey="fecha"
-                  tick={{ fontSize: 10, fill: "#71717a" }}
-                  axisLine={{ stroke: "#3f3f46" }}
+                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={{ stroke: "hsl(var(--border))" }}
                 />
                 <YAxis
                   domain={[minWeight * 0.9, maxWeight * 1.1]}
-                  tick={{ fontSize: 10, fill: "#71717a" }}
-                  axisLine={{ stroke: "#3f3f46" }}
+                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={{ stroke: "hsl(var(--border))" }}
                   label={{
                     value: "kg",
                     angle: -90,
                     position: "insideLeft",
-                    style: { fontSize: 10, fill: "#71717a" },
+                    style: { fontSize: 10, fill: "hsl(var(--muted-foreground))" },
                   }}
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#18181b",
-                    border: "1px solid #27272a",
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
                     borderRadius: "6px",
                     fontSize: "12px",
                   }}
-                  labelStyle={{ color: "#a1a1aa" }}
+                  labelStyle={{ color: "hsl(var(--muted-foreground))" }}
                   formatter={(value) => [`${value} kg`, "Peso"]}
                 />
                 <Line
                   type="monotone"
                   dataKey="weightUsed"
-                  stroke="#22c55e"
+                  stroke="hsl(var(--primary))"
                   strokeWidth={2}
-                  dot={{ fill: "#22c55e", strokeWidth: 0, r: 3 }}
-                  activeDot={{ r: 5, fill: "#4ade80" }}
+                  dot={{ fill: "hsl(var(--primary))", strokeWidth: 0, r: 3 }}
+                  activeDot={{ r: 5, fill: "hsl(var(--primary))" }}
                 />
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex justify-between mt-2 text-[10px] text-zinc-600">
+          <div className="flex justify-between mt-2 text-[10px] text-muted-foreground/60">
             <span>Mín: {minWeight} kg</span>
             <span>Máx: {maxWeight} kg</span>
             <span>Registros: {data.length}</span>
