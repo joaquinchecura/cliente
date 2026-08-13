@@ -3,17 +3,22 @@
 import { useState } from "react";
 import { logProgress, deleteProgressLog } from "@/app/actions/routines";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { CheckCircle, Trash2, Plus, Minus } from "lucide-react";
+import { TrendingUp, ChevronDown } from "lucide-react";
+import { ExerciseCardClient } from "./ExerciseCardClient";
+import { SetLogger } from "./SetLogger";
+import { RestTimer } from "./RestTimer";
 import { ProgressChart } from "./progress-chart";
+import { Exercise } from "@/types/exercise";
+import { cn } from "@/lib/utils";
 
 interface ProgressTrackerProps {
   routineId: string;
   exerciseId: string;
-  exerciseName: string;
+  exercise: Exercise;
   targetSets: number;
   targetReps: string;
+  rest?: string;
+  notes?: string;
   todayLogs: {
     id: string;
     setsCompleted: number;
@@ -27,45 +32,34 @@ interface ProgressTrackerProps {
 export function ProgressTracker({
   routineId,
   exerciseId,
-  exerciseName,
+  exercise,
   targetSets,
   targetReps,
+  rest,
+  notes,
   todayLogs,
 }: ProgressTrackerProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [sets, setSets] = useState(targetSets);
-  const [reps, setReps] = useState(targetReps);
-  const [weight, setWeight] = useState("");
-  const [notes, setNotes] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const totalSetsToday = todayLogs.reduce((sum, log) => sum + log.setsCompleted, 0);
+  const isComplete = totalSetsToday >= targetSets;
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!weight || parseFloat(weight) <= 0) return;
+  const handleLogSet = async (data: { reps: string; weight: number; notes?: string }) => {
+    await logProgress({
+      routineId,
+      exerciseId,
+      setsCompleted: 1,
+      repsCompleted: data.reps,
+      weightUsed: data.weight,
+      notes: data.notes,
+    });
+  };
 
-    setSaving(true);
-    try {
-      await logProgress({
-        routineId,
-        exerciseId,
-        setsCompleted: sets,
-        repsCompleted: reps,
-        weightUsed: parseFloat(weight),
-        notes: notes || undefined,
-      });
-      setWeight("");
-      setNotes("");
-      setIsOpen(false);
-    } catch (err) {
-      console.error(err);
-      alert("Error al guardar el progreso");
-    } finally {
-      setSaving(false);
-    }
-  }
-  
+  const handleDeleteLog = async (logId: string) => {
+    await deleteProgressLog(logId);
+  };
+
   const exerciseHistory = todayLogs.map((log) => ({
     date: log.date,
     weightUsed: log.weightUsed,
@@ -73,134 +67,109 @@ export function ProgressTracker({
     repsCompleted: log.repsCompleted,
   }));
 
+  // Parse rest time for timer
+  const restSeconds = rest ? parseInt(rest.match(/\d+/)?.[0] || "60") : 60;
+
   return (
-    <div className="mt-2 space-y-2">
-      {/* Resumen de hoy */}
-      {todayLogs.length > 0 && (
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground font-medium">
-            Hoy: {totalSetsToday} series completadas
-          </p>
-          {todayLogs.map((log) => (
-            <div
-              key={log.id}
-              className="flex items-center justify-between bg-secondary rounded px-2 py-1 text-xs"
-            >
-              <span className="text-secondary-foreground">
-                {log.setsCompleted}x{log.repsCompleted} @ {log.weightUsed}kg
-                {log.notes && ` — ${log.notes}`}
-              </span>
-              <form action={() => deleteProgressLog(log.id)}>
-                <Button
-                  type="submit"
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5 text-destructive hover:text-destructive/80"
-                >
-                  <Trash2 size={10} />
-                </Button>
-              </form>
-            </div>
-          ))}
+    <ExerciseCardClient
+      exercise={exercise}
+      targetSets={targetSets}
+      targetReps={targetReps}
+      rest={rest}
+      notes={notes}
+      completedSets={totalSetsToday}
+      isExpanded={isExpanded}
+      onToggle={() => setIsExpanded(!isExpanded)}
+    >
+      {/* Timer (solo visible cuando está expandido) */}
+      {isExpanded && rest && (
+        <div className="mb-3">
+          <RestTimer
+            defaultSeconds={restSeconds}
+            onComplete={() => {}}
+          />
         </div>
       )}
-      {todayLogs.length > 0 && (
-        <ProgressChart
-          data={exerciseHistory}
-          exerciseName={exerciseName}
+
+      {/* Set Logger */}
+      {isExpanded && (
+        <SetLogger
+          targetSets={targetSets}
+          targetReps={targetReps}
+          existingLogs={todayLogs}
+          onLogSet={handleLogSet}
+          onDeleteLog={handleDeleteLog}
         />
       )}
 
-      {/* Botón para agregar */}
-      {!isOpen ? (
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-full gap-1 text-xs h-7"
-          onClick={() => setIsOpen(true)}
-        >
-          <Plus size={12} /> Registrar serie
-        </Button>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-2 bg-card border border-border rounded-lg p-3">
-          <div className="grid grid-cols-3 gap-2">
-            <div className="space-y-1">
-              <Label className="text-[10px] text-muted-foreground">Series</Label>
-              <div className="flex items-center gap-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setSets(Math.max(1, sets - 1))}
-                >
-                  <Minus size={10} />
-                </Button>
-                <span className="w-6 text-center text-sm font-medium text-foreground">{sets}</span>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setSets(sets + 1)}
-                >
-                  <Plus size={10} />
-                </Button>
+      {/* History & Chart */}
+      {isExpanded && todayLogs.length > 0 && (
+        <div className="mt-3 space-y-2">
+          {/* Toggle history */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs gap-1 h-7 text-muted-foreground hover:text-foreground w-full justify-between"
+            onClick={() => setShowHistory(!showHistory)}
+          >
+            <span className="flex items-center gap-1">
+              <TrendingUp size={12} />
+              Historial y progreso
+            </span>
+            <ChevronDown
+              size={12}
+              className={cn("transition-transform", showHistory && "rotate-180")}
+            />
+          </Button>
+
+          {showHistory && (
+            <div className="space-y-3">
+              {/* Today's logs summary */}
+              <div className="space-y-1.5">
+                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                  Hoy
+                </p>
+                {todayLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-foreground">
+                        {log.setsCompleted}x{log.repsCompleted}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        @ {log.weightUsed}kg
+                      </span>
+                      {log.notes && (
+                        <span className="text-[10px] text-muted-foreground/60">
+                          — {log.notes}
+                        </span>
+                      )}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 text-muted-foreground/40 hover:text-destructive"
+                      onClick={() => handleDeleteLog(log.id)}
+                    >
+                      <span className="text-xs">✕</span>
+                    </Button>
+                  </div>
+                ))}
               </div>
+
+              {/* Chart */}
+              {exerciseHistory.length >= 2 && (
+                <ProgressChart
+                  data={exerciseHistory}
+                  exerciseName={exercise.name}
+                />
+              )}
             </div>
-
-            <div className="space-y-1">
-              <Label className="text-[10px] text-muted-foreground">Reps</Label>
-              <Input
-                value={reps}
-                onChange={(e) => setReps(e.target.value)}
-                className="h-7 text-sm bg-background border-border text-foreground"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <Label className="text-[10px] text-muted-foreground">Peso (kg)</Label>
-              <Input
-                type="number"
-                step="0.5"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                placeholder="0"
-                className="h-7 text-sm bg-background border-border text-foreground"
-                required
-              />
-            </div>
-          </div>
-
-          <Input
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Notas (opcional)"
-            className="h-7 text-xs bg-background border-border text-foreground placeholder:text-muted-foreground"
-          />
-
-          <div className="flex gap-2">
-            <Button
-              type="submit"
-              size="sm"
-              className="flex-1 h-7 text-xs gap-1"
-              disabled={saving}
-            >
-              <CheckCircle size={12} />
-              {saving ? "Guardando..." : "Guardar"}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => setIsOpen(false)}
-            >
-              Cancelar
-            </Button>
-          </div>
-        </form>
+          )}
+        </div>
       )}
-    </div>
+    </ExerciseCardClient>
   );
 }
