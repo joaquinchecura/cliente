@@ -333,10 +333,12 @@ model Exercise {
   name        String
   type        ExerciseType
   description String?
+  clientDescription String?  
   muscleGroup String?
   equipment   String?
   videoUrl    String?
   imageUrl    String?
+  gifUrl      String?   
   tags        String[]
   isPublic    Boolean           @default(true)
   createdAt   DateTime          @default(now())
