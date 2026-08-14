@@ -123,25 +123,15 @@ export async function getProgressHistory(days: number = 30) {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
 
-  const logs = await prisma.progressLog.findMany({
-    where: {
-      memberId: member.id,
-      date: {
-        gte: startDate,
+    const logs = await prisma.progressLog.findMany({
+      where: { memberId: member.id, date: { gte: startDate } },
+      include: {
+        exercise: {
+          select: { id: true, name: true, type: true, muscleGroup: true },
+        },
       },
-    },
-    select: {
-      id: true,
-      exerciseId: true,
-      routineId: true,
-      setsCompleted: true,
-      repsCompleted: true,
-      weightUsed: true,
-      notes: true,
-      date: true,
-    },
-    orderBy: { date: "desc" },
-  });
+      orderBy: { date: "desc" },
+    });
 
   return logs;
 }

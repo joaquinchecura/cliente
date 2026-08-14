@@ -344,6 +344,7 @@ model Exercise {
   createdAt   DateTime          @default(now())
 
   routineExercises RoutineExercise[]
+  progressLogs     ProgressLog[]
 
   @@map("exercises")
 }
@@ -398,6 +399,7 @@ model ProgressLog {
   routineId       String
   routine         Routine  @relation(fields: [routineId], references: [id], onDelete: Cascade)
   exerciseId      String
+  exercise        Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   memberId        String
   member          Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
   date            DateTime @default(now())
