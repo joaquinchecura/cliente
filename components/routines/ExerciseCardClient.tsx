@@ -31,6 +31,7 @@ interface ExerciseCardClientProps {
   completedSets: number;
   isExpanded: boolean;
   onToggle: () => void;
+  onOpenDetail?: () => void;  // ← NUEVO: para abrir modal
   children?: React.ReactNode;
 }
 
@@ -43,6 +44,7 @@ export function ExerciseCardClient({
   completedSets,
   isExpanded,
   onToggle,
+  onOpenDetail,
   children,
 }: ExerciseCardClientProps) {
   const [mediaError, setMediaError] = useState(false);
@@ -63,15 +65,16 @@ export function ExerciseCardClient({
       )}
     >
       {/* Header siempre visible */}
-      <div
-        className="p-4 cursor-pointer"
-        onClick={onToggle}
-      >
+      <div className="p-4">
         <div className="flex items-start gap-3">
-          {/* Thumbnail / GIF */}
-          <div
+          {/* Thumbnail clickeable para abrir modal */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenDetail?.();
+            }}
             className={cn(
-              "w-16 h-16 shrink-0 rounded-lg overflow-hidden relative",
+              "w-16 h-16 shrink-0 rounded-lg overflow-hidden relative cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all",
               !exercise.imageUrl && !exercise.gifUrl && "bg-muted flex items-center justify-center"
             )}
           >
@@ -106,18 +109,30 @@ export function ExerciseCardClient({
                 {completedSets}
               </div>
             </div>
-          </div>
+
+            {/* Icono de info al hover */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/30">
+              <Info size={14} className="text-white" />
+            </div>
+          </button>
 
           {/* Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <h3 className={cn(
-                  "font-semibold text-sm truncate",
-                  isComplete && "text-emerald-400"
-                )}>
+                {/* Nombre clickeable para abrir modal */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenDetail?.();
+                  }}
+                  className={cn(
+                    "font-semibold text-sm truncate text-left hover:text-primary transition-colors cursor-pointer",
+                    isComplete && "text-emerald-400"
+                  )}
+                >
                   {exercise.name}
-                </h3>
+                </button>
                 <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                   <Badge
                     variant="outline"
@@ -144,18 +159,34 @@ export function ExerciseCardClient({
               </div>
 
               <div className="flex items-center gap-1 shrink-0">
-                <ChevronDown
-                  size={16}
-                  className={cn(
-                    "text-muted-foreground transition-transform duration-200",
-                    isExpanded && "rotate-180"
-                  )}
-                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenDetail?.();
+                  }}
+                >
+                  <Info size={14} />
+                </Button>
+                <div
+                  className="cursor-pointer p-1"
+                  onClick={onToggle}
+                >
+                  <ChevronDown
+                    size={16}
+                    className={cn(
+                      "text-muted-foreground transition-transform duration-200",
+                      isExpanded && "rotate-180"
+                    )}
+                  />
+                </div>
               </div>
             </div>
 
             {/* Target info + progress bar */}
-            <div className="mt-2">
+            <div className="mt-2" onClick={onToggle}>
               <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
                 <span className="flex items-center gap-1">
                   <span className="font-medium text-foreground">{targetSets} series</span>

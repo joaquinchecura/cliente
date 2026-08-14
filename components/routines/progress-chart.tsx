@@ -2,22 +2,23 @@
 
 import { useState } from "react";
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Area,
-  AreaChart,
+  Cell,
   ReferenceLine,
 } from "recharts";
-import { TrendingUp, ChevronDown, BarChart3, Weight } from "lucide-react";
+import { TrendingUp, ChevronDown, BarChart3, Weight, Trophy, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-interface ProgressData {
+interface ExerciseProgress {
+  exerciseName: string;
+  exerciseType: string;
   date: string;
   weightUsed: number;
   setsCompleted: number;
@@ -25,36 +26,80 @@ interface ProgressData {
 }
 
 interface ProgressChartProps {
-  data: ProgressData[];
-  exerciseName: string;
+  data: ExerciseProgress[];
+  title?: string;
 }
 
-type ChartView = "weight" | "volume";
+type ChartView = "weight" | "volume" | "sets";
 
-export function ProgressChart({ data, exerciseName }: ProgressChartProps) {
+const TYPE_COLORS: Record<string, string> = {
+  STRENGTH: "#3b82f6",
+  CARDIO: "#ef4444",
+  FUNCTIONAL: "#f59e0b",
+  MOBILITY: "#10b981",
+  STRETCHING: "#14b8a6",
+  PLYOMETRIC: "#f97316",
+  BALANCE: "#8b5cf6",
+  TECHNIQUE: "#64748b",
+  WARMUP: "#f43f5e",
+  COOLDOWN: "#06b6d4",
+  OTHER: "#6b7280",
+};
+
+export function ProgressChart({ data, title = "Progreso" }: ProgressChartProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<ChartView>("weight");
 
-  if (data.length < 2) return null;
+  if (data.length === 0) return null;
 
-  const chartData = data.map((d, i) => {
-    const reps = parseInt(d.repsCompleted) || 0;
+  // Agrupar por ejercicio para mostrar comparación
+  const exerciseGroups = data.reduce((acc, d) => {
+    if (!acc[d.exerciseName]) {
+      acc[d.exerciseName] = {
+        name: d.exerciseName,
+        type: d.exerciseType,
+        entries: [],
+      };
+    }
+    acc[d.exerciseName].entries.push(d);
+    return acc;
+  }, {} as Record<string, { name: string; type: string; entries: ExerciseProgress[] }>);
+
+  // Datos para el gráfico: último registro de cada ejercicio
+  const chartData = Object.values(exerciseGroups).map((group) => {
+    const latest = group.entries[group.entries.length - 1];
+    const reps = parseInt(latest.repsCompleted) || 0;
+    const allWeights = group.entries.map((e) => e.weightUsed);
+    const maxWeight = Math.max(...allWeights);
+    const avgWeight = allWeights.reduce((a, b) => a + b, 0) / allWeights.length;
+    const totalSets = group.entries.reduce((sum, e) => sum + e.setsCompleted, 0);
+    const totalVolume = group.entries.reduce(
+      (sum, e) => sum + e.weightUsed * (parseInt(e.repsCompleted) || 0) * e.setsCompleted,
+      0
+    );
+
     return {
-      ...d,
-      fecha: new Date(d.date).toLocaleDateString("es-AR", {
-        day: "numeric",
-        month: "short",
-      }),
-      volumen: d.weightUsed * reps * d.setsCompleted,
-      index: i + 1,
+      name: group.name,
+      type: group.type,
+      weight: latest.weightUsed,
+      maxWeight,
+      avgWeight: Math.round(avgWeight * 10) / 10,
+      sets: totalSets,
+      volume: Math.round(totalVolume),
+      entries: group.entries.length,
+      color: TYPE_COLORS[group.type] || TYPE_COLORS["OTHER"],
     };
   });
 
-  const maxWeight = Math.max(...data.map((d) => d.weightUsed));
-  const minWeight = Math.min(...data.map((d) => d.weightUsed));
-  const avgWeight = data.reduce((sum, d) => sum + d.weightUsed, 0) / data.length;
+  const maxValue = Math.max(...chartData.map((d) => d[view]));
 
-  const maxVolume = Math.max(...chartData.map((d) => d.volumen));
+  const viewConfig = {
+    weight: { label: "Peso (kg)", icon: Weight, color: "text-primary" },
+    volume: { label: "Volumen total", icon: BarChart3, color: "text-amber-500" },
+    sets: { label: "Series totales", icon: Zap, color: "text-emerald-500" },
+  };
+
+  const CurrentIcon = viewConfig[view].icon;
 
   return (
     <div className="mt-2">
@@ -66,7 +111,7 @@ export function ProgressChart({ data, exerciseName }: ProgressChartProps) {
       >
         <span className="flex items-center gap-1.5">
           <TrendingUp size={12} />
-          Progreso de {exerciseName}
+          {title}
         </span>
         <ChevronDown
           size={12}
@@ -75,145 +120,126 @@ export function ProgressChart({ data, exerciseName }: ProgressChartProps) {
       </Button>
 
       {isOpen && (
-        <div className="mt-2 bg-card border border-border/60 rounded-xl p-4 space-y-3">
+        <div className="mt-2 bg-card border border-border/60 rounded-xl p-4 space-y-4">
           {/* View toggle */}
           <div className="flex items-center gap-1">
-            <Button
-              variant={view === "weight" ? "secondary" : "ghost"}
-              size="sm"
-              className="h-6 text-[10px] gap-1"
-              onClick={() => setView("weight")}
-            >
-              <Weight size={10} />
-              Peso
-            </Button>
-            <Button
-              variant={view === "volume" ? "secondary" : "ghost"}
-              size="sm"
-              className="h-6 text-[10px] gap-1"
-              onClick={() => setView("volume")}
-            >
-              <BarChart3 size={10} />
-              Volumen
-            </Button>
-          </div>
-
-          {/* Stats row */}
-          <div className="grid grid-cols-3 gap-2">
-            <div className="text-center p-2 rounded-lg bg-muted/50">
-              <p className="text-xs font-bold text-foreground">{maxWeight}</p>
-              <p className="text-[9px] text-muted-foreground">Máx (kg)</p>
-            </div>
-            <div className="text-center p-2 rounded-lg bg-muted/50">
-              <p className="text-xs font-bold text-foreground">{avgWeight.toFixed(1)}</p>
-              <p className="text-[9px] text-muted-foreground">Prom (kg)</p>
-            </div>
-            <div className="text-center p-2 rounded-lg bg-muted/50">
-              <p className="text-xs font-bold text-foreground">{data.length}</p>
-              <p className="text-[9px] text-muted-foreground">Registros</p>
-            </div>
+            {(Object.keys(viewConfig) as ChartView[]).map((v) => {
+              const Icon = viewConfig[v].icon;
+              return (
+                <Button
+                  key={v}
+                  variant={view === v ? "secondary" : "ghost"}
+                  size="sm"
+                  className="h-6 text-[10px] gap-1"
+                  onClick={() => setView(v)}
+                >
+                  <Icon size={10} />
+                  {viewConfig[v].label}
+                </Button>
+              );
+            })}
           </div>
 
           {/* Chart */}
-          <div className="h-52">
+          <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
-              {view === "weight" ? (
-                <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="weightGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
-                  <XAxis
-                    dataKey="fecha"
-                    tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
-                    axisLine={{ stroke: "hsl(var(--border))" }}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    domain={[minWeight * 0.9, maxWeight * 1.1]}
-                    tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <ReferenceLine
-                    y={avgWeight}
-                    stroke="hsl(var(--muted-foreground))"
-                    strokeDasharray="4 4"
-                    strokeOpacity={0.5}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--popover))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                      fontSize: "11px",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                    }}
-                    labelStyle={{ color: "hsl(var(--muted-foreground))", fontSize: "10px" }}
-                    formatter={(value: any) => [`${value} kg`, "Peso"]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="weightUsed"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={2}
-                    fill="url(#weightGradient)"
-                    dot={{ fill: "hsl(var(--primary))", strokeWidth: 0, r: 3 }}
-                    activeDot={{ r: 5, fill: "hsl(var(--primary))", strokeWidth: 2, stroke: "hsl(var(--background))" }}
-                  />
-                </AreaChart>
-              ) : (
-                <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="volumeGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(38, 92%, 50%)" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="hsl(38, 92%, 50%)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} />
-                  <XAxis
-                    dataKey="fecha"
-                    tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
-                    axisLine={{ stroke: "hsl(var(--border))" }}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    domain={[0, maxVolume * 1.1]}
-                    tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--popover))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                      fontSize: "11px",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                    }}
-                    labelStyle={{ color: "hsl(var(--muted-foreground))", fontSize: "10px" }}
-                    formatter={(value: any) => [`${Math.round(value)} kg`, "Volumen"]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="volumen"
-                    stroke="hsl(38, 92%, 50%)"
-                    strokeWidth={2}
-                    fill="url(#volumeGradient)"
-                    dot={{ fill: "hsl(38, 92%, 50%)", strokeWidth: 0, r: 3 }}
-                    activeDot={{ r: 5, fill: "hsl(38, 92%, 50%)", strokeWidth: 2, stroke: "hsl(var(--background))" }}
-                  />
-                </AreaChart>
-              )}
+              <BarChart
+                data={chartData}
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} horizontal={false} />
+                <XAxis
+                  type="number"
+                  tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={{ stroke: "hsl(var(--border))" }}
+                  tickLine={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  tick={{ fontSize: 10, fill: "hsl(var(--foreground))" }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={75}
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const d = payload[0].payload;
+                    return (
+                      <div className="bg-popover border border-border rounded-lg p-3 shadow-lg text-xs space-y-1.5">
+                        <p className="font-bold text-foreground">{d.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: d.color }}
+                          />
+                          <span className="text-muted-foreground">{d.type}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 pt-1 border-t border-border/50">
+                          <span className="text-muted-foreground">Último peso:</span>
+                          <span className="font-medium text-right">{d.weight} kg</span>
+                          <span className="text-muted-foreground">Máx peso:</span>
+                          <span className="font-medium text-right">{d.maxWeight} kg</span>
+                          <span className="text-muted-foreground">Promedio:</span>
+                          <span className="font-medium text-right">{d.avgWeight} kg</span>
+                          <span className="text-muted-foreground">Series:</span>
+                          <span className="font-medium text-right">{d.sets}</span>
+                          <span className="text-muted-foreground">Registros:</span>
+                          <span className="font-medium text-right">{d.entries}</span>
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+                <Bar dataKey={view} radius={[0, 4, 4, 0]} maxBarSize={24}>
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </div>
 
-          <p className="text-[9px] text-muted-foreground/50 text-center">
-            {view === "weight" ? "Línea punteada = promedio" : "Volumen = peso × reps × series"}
-          </p>
+          {/* Legend / Summary */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {chartData.slice(0, 6).map((d) => (
+              <div
+                key={d.name}
+                className="flex items-center gap-2 p-2 rounded-lg bg-muted/50"
+              >
+                <div
+                  className="w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{ backgroundColor: d.color }}
+                />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-medium text-foreground truncate">
+                    {d.name}
+                  </p>
+                  <p className="text-[9px] text-muted-foreground">
+                    {d.weight} kg • {d.sets} series
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* PR highlight */}
+          {chartData.length > 0 && (
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-amber-500/5 border border-amber-500/10">
+              <Trophy size={12} className="text-amber-500 shrink-0" />
+              <p className="text-[10px] text-amber-400/80">
+                <span className="font-medium">
+                  {chartData.reduce((max, d) => (d.maxWeight > max.maxWeight ? d : max), chartData[0]).name}
+                </span>
+                {" "}tiene el mayor peso registrado: {" "}
+                <span className="font-bold">
+                  {Math.max(...chartData.map((d) => d.maxWeight))} kg
+                </span>
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>
