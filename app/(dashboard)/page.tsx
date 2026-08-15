@@ -267,22 +267,6 @@ export default async function DashboardPage() {
         />
 
       </div>
-
-      {/* ─── Noticias preview (solo si hay contenido) ─────── */}
-      {!isPending && (
-        <div className="bg-card border border-border rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-foreground text-sm">Últimas Noticias</h3>
-            <Link href="/noticias" className="text-xs text-primary hover:text-primary/80 font-medium">
-              Ver todas →
-            </Link>
-          </div>
-          <NoticiasPreview />
-        </div>
-      )}
-
-      {/* Espacio bottom para mobile nav */}
-      <div className="h-8" />
     </div>
   );
 }
