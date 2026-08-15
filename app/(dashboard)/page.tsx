@@ -4,12 +4,14 @@ export const dynamic = 'force-dynamic';
 import { getCurrentMember } from "@/lib/member";
 import { prisma } from "@/lib/prisma";
 import { 
-  Calendar, Dumbbell, TrendingUp, QrCode, 
-  AlertCircle, Clock, ShieldCheck, Newspaper 
+  Dumbbell, Calendar, QrCode, TrendingUp, 
+  CreditCard, ShieldCheck, Newspaper, User,
+  Clock, AlertCircle
 } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
-// Componente server para noticias
+// ─── Componente server para noticias ─────────────────────────────
 async function NoticiasPreview() {
   const news = await prisma.news.findMany({
     where: { isActive: true },
@@ -18,7 +20,7 @@ async function NoticiasPreview() {
   });
 
   if (news.length === 0) {
-    return <p className="text-sm text-zinc-500">No hay novedades</p>;
+    return <p className="text-sm text-muted-foreground">No hay novedades</p>;
   }
 
   return (
@@ -27,154 +29,251 @@ async function NoticiasPreview() {
         <Link
           key={item.id}
           href="/noticias"
-          className="block p-3 bg-zinc-800/50 rounded-lg hover:bg-zinc-800 transition-colors"
+          className="block p-3 bg-muted/40 rounded-lg hover:bg-muted/60 transition-colors"
         >
-          <p className="text-sm font-medium text-white line-clamp-1">{item.title}</p>
-          <p className="text-xs text-zinc-500 line-clamp-2 mt-1">{item.content}</p>
+          <p className="text-sm font-medium text-foreground line-clamp-1">{item.title}</p>
+          <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{item.content}</p>
         </Link>
       ))}
     </div>
   );
 }
 
+// ─── Card horizontal reutilizable ────────────────────────────────
+interface ActionCardProps {
+  href: string;
+  icon: React.ElementType;
+  iconColor: string;
+  iconBg: string;
+  title: string;
+  subtitle: string;
+  badge?: { text: string; color: string; bg: string };
+  isMembership?: boolean;
+}
+
+function ActionCard({ href, icon: Icon, iconColor, iconBg, title, subtitle, badge, isMembership }: ActionCardProps) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "flex items-center gap-4 rounded-2xl p-4 transition-all duration-200 group",
+        isMembership
+          ? "bg-primary/5 border border-primary/20 hover:bg-primary/10"
+          : "bg-card border border-border hover:border-border/80 hover:bg-card/80"
+      )}
+    >
+      <div className={cn("rounded-xl p-3 shrink-0", iconBg)}>
+        <Icon size={22} className={iconColor} strokeWidth={2.2} />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className={cn("font-bold text-[15px] truncate", isMembership && "text-primary")}>{title}</p>
+        <p className="text-xs text-muted-foreground truncate mt-0.5">{subtitle}</p>
+      </div>
+      {badge ? (
+        <span className={cn("text-[11px] font-semibold px-2.5 py-1 rounded-full shrink-0", badge.bg, badge.color)}>
+          {badge.text}
+        </span>
+      ) : (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground/50 shrink-0">
+          <path d="M9 18l6-6-6-6"/>
+        </svg>
+      )}
+    </Link>
+  );
+}
+
+// ─── Page principal ────────────────────────────────────────────
 export default async function DashboardPage() {
   const member = await getCurrentMember();
 
-  const [bookingsCount, routinesCount, attendancesCount, paymentsCount, lastComp] = await Promise.all([
-    prisma.booking.count({ where: { memberId: member.id, status: "CONFIRMED" } }),
+  const [
+    routinesCount,
+    bookingsCount,
+    attendancesCount,
+    paymentsCount,
+    lastComp,
+  ] = await Promise.all([
     prisma.routine.count({ where: { memberId: member.id, isActive: true } }),
+    prisma.booking.count({ where: { memberId: member.id, status: "CONFIRMED" } }),
     prisma.attendance.count({ where: { memberId: member.id, status: "ALLOWED" } }),
     prisma.payment.count({ where: { memberId: member.id, status: "COMPLETED" } }),
-    prisma.bodyComposition.findFirst({ where: { memberId: member.id }, orderBy: { createdAt: "desc" } }),
+    prisma.bodyComposition.findFirst({
+      where: { memberId: member.id },
+      orderBy: { createdAt: "desc" },
+    }),
   ]);
 
-  const activeMembership = member.memberships[0];
+  const activeMembership = member.memberships?.[0];
   const isPending = member.status === "PENDING";
   const isOverdue = member.status === "OVERDUE";
 
-  // Calcular estado del IMC
+  // Calcular IMC
   const bmi = lastComp?.bmi ? Number(lastComp.bmi) : null;
-  const bmiLabel = bmi 
-    ? bmi < 18.5 ? 'Bajo peso'
-      : bmi < 25 ? 'Normal'
-      : bmi < 30 ? 'Sobrepeso'
-      : 'Obesidad'
+  const bmiLabel = bmi
+    ? bmi < 18.5 ? "Bajo peso"
+      : bmi < 25 ? "Normal"
+      : bmi < 30 ? "Sobrepeso"
+      : "Obesidad"
     : null;
 
+  // Subtítulos dinámicos
+  const routineSubtitle = routinesCount > 0
+    ? `${routinesCount} rutina${routinesCount > 1 ? "s" : ""} activa${routinesCount > 1 ? "s" : ""}`
+    : "Sin rutinas asignadas";
+
+  const bookingSubtitle = bookingsCount > 0
+    ? `${bookingsCount} reserva${bookingsCount > 1 ? "s" : ""} confirmada${bookingsCount > 1 ? "s" : ""}`
+    : "Sin reservas esta semana";
+
+  const attendanceSubtitle = attendancesCount > 0
+    ? `${attendancesCount} asistencia${attendancesCount > 1 ? "s" : ""} · Mostrá tu QR`
+    : "Mostrá tu QR en recepción";
+
+  const progressSubtitle = bmi
+    ? `IMC: ${bmi.toFixed(1)} · ${bmiLabel}`
+    : "Sin registros · Empezá hoy";
+
+  const paymentSubtitle = paymentsCount > 0
+    ? `${paymentsCount} pago${paymentsCount > 1 ? "s" : ""} realizado${paymentsCount > 1 ? "s" : ""} · Ver historial`
+    : "Ver historial de pagos";
+
+  const membershipSubtitle = activeMembership
+    ? `${activeMembership.plan.name} · Vence ${new Date(activeMembership.endDate).toLocaleDateString("es-AR", { day: "numeric", month: "long" })}`
+    : "Sin membresía activa";
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
       <div>
-        <h2 className="text-3xl font-bold text-white">
+        <h2 className="text-2xl md:text-3xl font-extrabold text-foreground">
           ¡Hola, {member.firstName}! 👋
         </h2>
-        <p className="text-zinc-400 mt-1">Este es tu resumen de hoy</p>
+        <p className="text-muted-foreground text-sm mt-1">Este es tu resumen de hoy</p>
       </div>
 
-      {/* Estado Pendiente */}
+      {/* Alerta: Cuenta pendiente */}
       {isPending && (
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-5 flex items-start gap-4">
-          <div className="p-2 bg-amber-500/20 rounded-lg">
-            <Clock size={24} className="text-amber-400" />
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-start gap-3">
+          <div className="p-2 bg-amber-500/20 rounded-lg shrink-0">
+            <Clock size={20} className="text-amber-400" />
           </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-amber-400">Cuenta pendiente de aprobación</h3>
-            <p className="text-sm text-amber-500/70 mt-1">
-              Tu cuenta está siendo revisada por el equipo de Cultiva. 
-              Te notificaremos cuando esté activa.
+          <div>
+            <p className="font-semibold text-amber-400 text-sm">Cuenta pendiente de aprobación</p>
+            <p className="text-xs text-amber-500/70 mt-0.5">
+              Tu cuenta está siendo revisada por el equipo de Cultiva. Te notificaremos cuando esté activa.
             </p>
           </div>
         </div>
       )}
 
-      {/* Membresía Vencida */}
+      {/* Alerta: Membresía vencida */}
       {isOverdue && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-5 flex items-start gap-4">
-          <div className="p-2 bg-red-500/20 rounded-lg">
-            <AlertCircle size={24} className="text-red-400" />
+        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex items-start gap-3">
+          <div className="p-2 bg-red-500/20 rounded-lg shrink-0">
+            <AlertCircle size={20} className="text-red-400" />
           </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-red-400">Membresía vencida</h3>
-            <p className="text-sm text-red-500/70 mt-1">
+          <div>
+            <p className="font-semibold text-red-400 text-sm">Membresía vencida</p>
+            <p className="text-xs text-red-500/70 mt-0.5">
               Contactá a recepción para renovar tu membresía.
             </p>
           </div>
         </div>
       )}
 
-      {/* Membresía Activa */}
-      {activeMembership && !isPending && (
-        <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-5 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-2 bg-blue-500/20 rounded-lg">
-              <ShieldCheck size={24} className="text-blue-400" />
-            </div>
-            <div>
-              <p className="text-sm text-blue-400 font-medium">Membresía Activa</p>
-              <p className="text-white font-semibold text-lg">{activeMembership.plan.name}</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-zinc-500">Vence</p>
-            <p className="text-sm text-zinc-300 font-medium">
-              {new Date(activeMembership.endDate).toLocaleDateString("es-AR", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
-            </p>
-          </div>
-        </div>
-      )}
+      {/* ─── Cards principales ─────────────────────────────── */}
+      <div className="flex flex-col gap-2.5">
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link href="/clases" className="group bg-zinc-900 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all duration-200">
-          <div className="p-3 bg-blue-500/10 rounded-xl w-fit mb-4 group-hover:bg-blue-500/20 transition-colors">
-            <Calendar className="text-blue-400" size={24} />
-          </div>
-          <p className="text-3xl font-bold text-white">{bookingsCount}</p>
-          <p className="text-sm text-zinc-500 mt-1">Reservas</p>
-        </Link>
+        {/* 1. Mi Rutina */}
+        <ActionCard
+          href="/rutina"
+          icon={Dumbbell}
+          iconColor="text-emerald-400"
+          iconBg="bg-emerald-500/15"
+          title="Mi Rutina"
+          subtitle={routineSubtitle}
+        />
 
-        <Link href="/rutina" className="group bg-zinc-900 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all duration-200">
-          <div className="p-3 bg-green-500/10 rounded-xl w-fit mb-4 group-hover:bg-green-500/20 transition-colors">
-            <Dumbbell className="text-green-400" size={24} />
-          </div>
-          <p className="text-3xl font-bold text-white">{routinesCount}</p>
-          <p className="text-sm text-zinc-500 mt-1">Rutinas</p>
-        </Link>
+        {/* 2. Mis Reservas */}
+        <ActionCard
+          href="/clases"
+          icon={Calendar}
+          iconColor="text-blue-400"
+          iconBg="bg-blue-500/15"
+          title="Mis Reservas"
+          subtitle={bookingSubtitle}
+        />
 
-        <Link href="/asistencias" className="group bg-zinc-900 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all duration-200">
-          <div className="p-3 bg-purple-500/10 rounded-xl w-fit mb-4 group-hover:bg-purple-500/20 transition-colors">
-            <QrCode className="text-purple-400" size={24} />
-          </div>
-          <p className="text-3xl font-bold text-white">{attendancesCount}</p>
-          <p className="text-sm text-zinc-500 mt-1">Asistencias</p>
-        </Link>
+        {/* 3. Acceso al Gym (QR) */}
+        <ActionCard
+          href="/asistencias"
+          icon={QrCode}
+          iconColor="text-purple-400"
+          iconBg="bg-purple-500/15"
+          title="Acceso al Gym"
+          subtitle={attendanceSubtitle}
+        />
 
-        <Link href="/progreso" className="group bg-zinc-900 border border-zinc-800 rounded-2xl p-6 hover:border-zinc-700 hover:bg-zinc-800/50 transition-all duration-200">
-          <div className="p-3 bg-orange-500/10 rounded-xl w-fit mb-4 group-hover:bg-orange-500/20 transition-colors">
-            <TrendingUp className="text-orange-400" size={24} />
-          </div>
-          <p className="text-3xl font-bold text-white">
-            {bmi ? bmi.toFixed(1) : "—"}
-          </p>
-          <p className="text-sm text-zinc-500 mt-1">
-            {bmiLabel || "Sin registros"}
-          </p>
-        </Link>
+        {/* 4. Mi Progreso */}
+        <ActionCard
+          href="/progreso"
+          icon={TrendingUp}
+          iconColor="text-orange-400"
+          iconBg="bg-orange-500/15"
+          title="Mi Progreso"
+          subtitle={progressSubtitle}
+        />
+
+        {/* 5. Pagos */}
+        <ActionCard
+          href="/pagos"
+          icon={CreditCard}
+          iconColor="text-pink-400"
+          iconBg="bg-pink-500/15"
+          title="Pagos"
+          subtitle={paymentSubtitle}
+        />
+
+        {/* 6. Membresía (destacada) */}
+        <ActionCard
+          href="/pagos"
+          icon={ShieldCheck}
+          iconColor="text-primary"
+          iconBg="bg-primary/20"
+          title={activeMembership ? "Membresía Activa" : "Sin Membresía"}
+          subtitle={membershipSubtitle}
+          isMembership
+          badge={activeMembership && !isOverdue ? { text: "Activa", color: "text-primary", bg: "bg-primary/20" } : undefined}
+        />
+
+        {/* 7. Noticias */}
+        <ActionCard
+          href="/noticias"
+          icon={Newspaper}
+          iconColor="text-sky-400"
+          iconBg="bg-sky-500/15"
+          title="Noticias"
+          subtitle="Últimas novedades del gym"
+        />
+
+        {/* 8. Mi Perfil */}
+        <ActionCard
+          href="/perfil"
+          icon={User}
+          iconColor="text-gray-400"
+          iconBg="bg-gray-500/15"
+          title="Mi Perfil"
+          subtitle="Editar datos personales"
+        />
+
       </div>
 
-      {/* Noticias recientes */}
+      {/* ─── Noticias preview (solo si hay contenido) ─────── */}
       {!isPending && (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+        <div className="bg-card border border-border rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-white flex items-center gap-2">
-              <Newspaper size={18} className="text-blue-400" />
-              Últimas Noticias
-            </h3>
-            <Link href="/noticias" className="text-sm text-blue-400 hover:text-blue-300">
+            <h3 className="font-semibold text-foreground text-sm">Últimas Noticias</h3>
+            <Link href="/noticias" className="text-xs text-primary hover:text-primary/80 font-medium">
               Ver todas →
             </Link>
           </div>
@@ -182,38 +281,8 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Quick Actions */}
-      {!isPending && (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-          <h3 className="font-semibold text-white mb-4">Acciones Rápidas</h3>
-          <div className="flex flex-wrap gap-3">
-            <Link 
-              href="/clases" 
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-            >
-              Reservar Clase
-            </Link>
-            <Link 
-              href="/asistencias" 
-              className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-sm font-medium hover:bg-zinc-700 transition-colors"
-            >
-              QR + Asistencia 
-            </Link>
-            <Link 
-              href="/progreso" 
-              className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-sm font-medium hover:bg-zinc-700 transition-colors"
-            >
-              Registrar Peso
-            </Link>
-            <Link 
-              href="/noticias" 
-              className="px-4 py-2 bg-zinc-800 text-zinc-300 rounded-lg text-sm font-medium hover:bg-zinc-700 transition-colors"
-            >
-              Noticias
-            </Link>
-          </div>
-        </div>
-      )}
+      {/* Espacio bottom para mobile nav */}
+      <div className="h-8" />
     </div>
   );
 }

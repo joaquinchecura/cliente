@@ -10,7 +10,7 @@ const navItems = [
   { href: "/", label: "Inicio", icon: Home },
   { href: "/clases", label: "Clases", icon: Calendar },
   { href: "/rutina", label: "Mi Rutina", icon: Dumbbell },
-  { href: "/rutina/historial", label: "Progreso", icon: TrendingUp },
+  { href: "/rutina/historial", label: "Historial", icon: TrendingUp },
   { href: "/progreso", label: "Progreso", icon: TrendingUp },
   { href: "/asistencias", label: "Asistencias", icon: QrCode },
   { href: "/pagos", label: "Pagos", icon: CreditCard },
@@ -38,7 +38,7 @@ export default function DashboardLayout({
             </div>
           </div>
         </div>
-        
+
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => (
             <Link
@@ -51,7 +51,7 @@ export default function DashboardLayout({
             </Link>
           ))}
         </nav>
-        
+
         <div className="p-4 border-t border-border">
           <UserMenu />
         </div>
@@ -62,7 +62,7 @@ export default function DashboardLayout({
 
       {/* Main Content */}
       <main className="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8 min-h-screen">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-2xl mx-auto">
           {children}
         </div>
       </main>
