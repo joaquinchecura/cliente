@@ -31,7 +31,7 @@ export default function MobileMenu() {
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <span className="text-lg font-bold text-primary-foreground">C</span>
           </div>
-          <h1 className="font-bold text-foreground">Cultiva</h1>
+          <h1 className="font-bold text-foreground">Cultiva CLIENTE</h1>
         </div>
         <button 
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

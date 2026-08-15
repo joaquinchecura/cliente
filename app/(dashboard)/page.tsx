@@ -146,7 +146,7 @@ export default async function DashboardPage() {
       {/* Header */}
       <div>
         <h2 className="text-2xl md:text-3xl font-extrabold text-foreground">
-          ¡Hola, {member.firstName}! 👋
+          ¡Hola, {member.firstName}!
         </h2>
         <p className="text-muted-foreground text-sm mt-1">Este es tu resumen de hoy</p>
       </div>

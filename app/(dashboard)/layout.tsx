@@ -61,7 +61,7 @@ export default function DashboardLayout({
       <MobileMenu />
 
       {/* Main Content */}
-      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-16 md:pt-8 min-h-screen">
+      <main className="flex-1 md:ml-64 p-4 md:p-8 pt-20 md:pt-8 min-h-screen">
         <div className="max-w-2xl mx-auto">
           {children}
         </div>
