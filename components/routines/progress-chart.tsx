@@ -21,6 +21,16 @@ const TYPE_COLORS: Record<string, string> = {
   WARMUP: "#f43f5e", COOLDOWN: "#06b6d4", OTHER: "#6b7280",
 };
 
+// Colores hardcodeados para tema oscuro
+const DARK_COLORS = {
+  text: "#fafafa",           // blanco - foreground
+  textMuted: "#a1a1aa",      // gris claro - muted-foreground
+  border: "#27272a",         // borde oscuro
+  grid: "#27272a",           // líneas de grilla
+  tooltipBg: "#18181b",      // fondo tooltip
+  tooltipBorder: "#27272a",  // borde tooltip
+};
+
 export function ProgressChart({ data, title = "Progreso" }: ProgressChartProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [view, setView] = useState<ChartView>("weight");
@@ -65,26 +75,55 @@ export function ProgressChart({ data, title = "Progreso" }: ProgressChartProps) 
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }} axisLine={{ stroke: "hsl(var(--border))" }} tickLine={false} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--foreground))" }} axisLine={false} tickLine={false} width={75} />
-                <Tooltip content={({ active, payload }) => {
-                  if (!active || !payload?.length) return null;
-                  const d = payload[0].payload;
-                  return (
-                    <div className="bg-popover border border-border rounded-lg p-3 shadow-lg text-xs space-y-1.5">
-                      <p className="font-bold text-foreground">{d.name}</p>
-                      <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }} /><span className="text-muted-foreground">{d.type}</span></div>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 pt-1 border-t border-border/50">
-                        <span className="text-muted-foreground">Último peso:</span><span className="font-medium text-right">{d.weight} kg</span>
-                        <span className="text-muted-foreground">Máx peso:</span><span className="font-medium text-right">{d.maxWeight} kg</span>
-                        <span className="text-muted-foreground">Promedio:</span><span className="font-medium text-right">{d.avgWeight} kg</span>
-                        <span className="text-muted-foreground">Series:</span><span className="font-medium text-right">{d.sets}</span>
-                        <span className="text-muted-foreground">Registros:</span><span className="font-medium text-right">{d.entries}</span>
+                <CartesianGrid strokeDasharray="3 3" stroke={DARK_COLORS.grid} opacity={0.3} horizontal={false} />
+                <XAxis 
+                  type="number" 
+                  tick={{ fontSize: 9, fill: DARK_COLORS.textMuted }} 
+                  axisLine={{ stroke: DARK_COLORS.border }} 
+                  tickLine={false} 
+                />
+                <YAxis 
+                  type="category" 
+                  dataKey="name" 
+                  tick={{ fontSize: 10, fill: DARK_COLORS.text }} 
+                  axisLine={false} 
+                  tickLine={false} 
+                  width={75} 
+                />
+                <Tooltip 
+                  cursor={{ fill: "rgba(255,255,255,0.05)" }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const d = payload[0].payload;
+                    return (
+                      <div 
+                        className="rounded-lg p-3 shadow-lg text-xs space-y-1.5"
+                        style={{ 
+                          backgroundColor: DARK_COLORS.tooltipBg, 
+                          border: `1px solid ${DARK_COLORS.tooltipBorder}` 
+                        }}
+                      >
+                        <p className="font-bold" style={{ color: DARK_COLORS.text }}>{d.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }} />
+                          <span style={{ color: DARK_COLORS.textMuted }}>{d.type}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 pt-1" style={{ borderTop: `1px solid ${DARK_COLORS.border}` }}>
+                          <span style={{ color: DARK_COLORS.textMuted }}>Último peso:</span>
+                          <span className="font-medium text-right" style={{ color: DARK_COLORS.text }}>{d.weight} kg</span>
+                          <span style={{ color: DARK_COLORS.textMuted }}>Máx peso:</span>
+                          <span className="font-medium text-right" style={{ color: DARK_COLORS.text }}>{d.maxWeight} kg</span>
+                          <span style={{ color: DARK_COLORS.textMuted }}>Promedio:</span>
+                          <span className="font-medium text-right" style={{ color: DARK_COLORS.text }}>{d.avgWeight} kg</span>
+                          <span style={{ color: DARK_COLORS.textMuted }}>Series:</span>
+                          <span className="font-medium text-right" style={{ color: DARK_COLORS.text }}>{d.sets}</span>
+                          <span style={{ color: DARK_COLORS.textMuted }}>Registros:</span>
+                          <span className="font-medium text-right" style={{ color: DARK_COLORS.text }}>{d.entries}</span>
+                        </div>
                       </div>
-                    </div>
-                  );
-                }} />
+                    );
+                  }} 
+                />
                 <Bar dataKey={view} radius={[0, 4, 4, 0]} maxBarSize={24}>
                   {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                 </Bar>
@@ -96,8 +135,8 @@ export function ProgressChart({ data, title = "Progreso" }: ProgressChartProps) 
               <div key={d.name} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
                 <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
                 <div className="min-w-0">
-                  <p className="text-[10px] font-medium text-foreground truncate">{d.name}</p>
-                  <p className="text-[9px] text-muted-foreground">{d.weight} kg • {d.sets} series</p>
+                  <p className="text-[10px] font-medium truncate" style={{ color: DARK_COLORS.text }}>{d.name}</p>
+                  <p className="text-[9px]" style={{ color: DARK_COLORS.textMuted }}>{d.weight} kg • {d.sets} series</p>
                 </div>
               </div>
             ))}
