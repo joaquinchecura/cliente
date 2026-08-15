@@ -8,8 +8,8 @@ const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Cultiva - Tu Gimnasio",
-  description: "App del gimnasio Cultiva",
+  title: "CultivaFitness",
+  description: "App del cliente CultivaFitness",
 };
 
 export default function RootLayout({
@@ -18,7 +18,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      afterSignOutUrl="/sign-in"
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+    >
       <html lang="es" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
         <body className={inter.className}>
           {children}

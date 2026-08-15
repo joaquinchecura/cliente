@@ -58,7 +58,7 @@ export default function MobileMenu() {
             ))}
             <div className="pt-4 border-t border-border mt-4">
               <div className="px-4 py-2">
-                <UserButton afterSignOutUrl="/sign-in" />
+                <UserButton />
               </div>
             </div>
           </nav>
