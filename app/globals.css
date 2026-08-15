@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -79,7 +78,6 @@ body {
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* 🌙 ROOT OSCURO — Todo el sistema hereda dark */
 :root {
   --background: #09090b;
   --foreground: #fafafa;
