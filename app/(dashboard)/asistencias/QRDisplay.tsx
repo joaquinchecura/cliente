@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { ShieldCheck, Clock, RefreshCw } from "lucide-react";
+import { ShieldCheck, Clock, RefreshCw, CheckCircle2, XCircle } from "lucide-react";
 
 interface QRDisplayProps {
   memberId: string;
@@ -13,17 +13,31 @@ interface QRDisplayProps {
 
 export default function QRDisplay({ memberId, memberName, dni, status }: QRDisplayProps) {
   const [token, setToken] = useState<string | null>(null);
+  const [attendanceId, setAttendanceId] = useState<string | null>(null);
+  const [scanStatus, setScanStatus] = useState<"PENDING" | "ALLOWED" | "DENIED" | null>(null);
   const [timeLeft, setTimeLeft] = useState<number>(120);
   const [loading, setLoading] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  function stopPolling() {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }
 
   async function generateToken() {
     setLoading(true);
+    stopPolling();
+    setScanStatus(null);
     try {
       const res = await fetch("/api/acceso/qr", { method: "POST" });
       if (res.ok) {
         const data = await res.json();
         setToken(data.token);
+        setAttendanceId(data.attendanceId);
         setTimeLeft(120);
+        setScanStatus("PENDING");
       }
     } catch (error) {
       console.error("Error generating QR:", error);
@@ -34,10 +48,12 @@ export default function QRDisplay({ memberId, memberName, dni, status }: QRDispl
 
   useEffect(() => {
     generateToken();
+    return () => stopPolling();
   }, []);
 
+  // Countdown de expiración del QR
   useEffect(() => {
-    if (!token) return;
+    if (!token || scanStatus !== "PENDING") return;
 
     const interval = setInterval(() => {
       setTimeLeft((prev) => {
@@ -50,7 +66,27 @@ export default function QRDisplay({ memberId, memberName, dni, status }: QRDispl
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [token]);
+  }, [token, scanStatus]);
+
+  // Polling: consulta si el admin ya escaneó este QR
+  useEffect(() => {
+    if (!attendanceId || scanStatus !== "PENDING") return;
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/acceso/estado?attendanceId=${attendanceId}`);
+        const data = await res.json();
+        if (data.status === "ALLOWED" || data.status === "DENIED") {
+          setScanStatus(data.status);
+          stopPolling();
+        }
+      } catch (error) {
+        console.error("Error checking status:", error);
+      }
+    }, 1500);
+
+    return () => stopPolling();
+  }, [attendanceId, scanStatus]);
 
   const qrValue = token ? `${memberId}:${token}` : memberId;
 
@@ -62,12 +98,30 @@ export default function QRDisplay({ memberId, memberName, dni, status }: QRDispl
             <RefreshCw className="animate-spin text-zinc-400" size={32} />
           </div>
         ) : (
-          <QRCodeSVG value={qrValue} size={200} level="H" includeMargin={true} />
+          <div className="relative">
+            <QRCodeSVG value={qrValue} size={200} level="H" includeMargin={true} />
+
+            {/* Overlay de confirmación al detectar el escaneo */}
+            {scanStatus === "ALLOWED" && (
+              <div className="absolute inset-0 bg-green-500/95 rounded-lg flex flex-col items-center justify-center gap-2">
+                <CheckCircle2 className="text-white" size={48} />
+                <p className="text-white font-bold text-sm">Acceso permitido</p>
+              </div>
+            )}
+            {scanStatus === "DENIED" && (
+              <div className="absolute inset-0 bg-red-500/95 rounded-lg flex flex-col items-center justify-center gap-2">
+                <XCircle className="text-white" size={48} />
+                <p className="text-white font-bold text-sm">Acceso denegado</p>
+              </div>
+            )}
+          </div>
         )}
-        
-        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-zinc-800 text-zinc-300 text-xs px-3 py-1 rounded-full border border-zinc-700">
-          {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
-        </div>
+
+        {scanStatus === "PENDING" && (
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-zinc-800 text-zinc-300 text-xs px-3 py-1 rounded-full border border-zinc-700">
+            {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}
+          </div>
+        )}
       </div>
 
       <div className="text-center space-y-1 mt-2">
@@ -94,7 +148,7 @@ export default function QRDisplay({ memberId, memberName, dni, status }: QRDispl
         className="mt-4 flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-300 transition-colors disabled:opacity-50"
       >
         <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-        Regenerar QR
+        {scanStatus === "ALLOWED" || scanStatus === "DENIED" ? "Generar nuevo QR" : "Regenerar QR"}
       </button>
     </div>
   );

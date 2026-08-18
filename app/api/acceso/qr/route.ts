@@ -6,42 +6,36 @@ import { randomBytes } from 'crypto'
 export async function POST() {
   try {
     const { userId } = await auth()
-    
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const member = await prisma.member.findFirst({
-      where: { clerkUserId: userId },
-    })
-
+    const member = await prisma.member.findFirst({ where: { clerkUserId: userId } })
     if (!member) {
       return NextResponse.json({ error: 'Member not found' }, { status: 404 })
     }
 
-    // Generar token único
     const token = randomBytes(32).toString('hex')
 
-    // Guardar en attendance como QR pendiente
-    // Primero invalidar tokens anteriores del mismo member
+    // Invalidar QRs pendientes anteriores del mismo member (no los ALLOWED —
+    // esos ya fueron escaneados y son historial real, no se tocan)
     await prisma.attendance.updateMany({
-      where: { memberId: member.id, status: 'ALLOWED' },
+      where: { memberId: member.id, status: 'PENDING' },
       data: { status: 'DENIED' },
     })
 
-    // Crear nuevo attendance con token fresco
     const attendance = await prisma.attendance.create({
       data: {
         memberId: member.id,
         qrToken: token,
-        status: 'ALLOWED',
+        status: 'PENDING',
       },
     })
 
-    return NextResponse.json({ 
-      token, 
+    return NextResponse.json({
+      token,
       attendanceId: attendance.id,
-      expiresAt: new Date(Date.now() + 2 * 60 * 1000) // 2 minutos (solo informativo)
+      expiresAt: new Date(Date.now() + 2 * 60 * 1000),
     })
   } catch (error) {
     console.error('Error:', error)

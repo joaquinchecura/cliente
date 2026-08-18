@@ -82,11 +82,11 @@ export default async function AsistenciasPage() {
                   )}
                   <div>
                     <p className="text-sm text-white">
-                      {new Date(a.entryTime).toLocaleDateString('es-AR', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                      })}
+                    {new Date(a.entryTime).toLocaleTimeString('es-AR', {
+  hour: '2-digit',
+  minute: '2-digit',
+  timeZone: 'America/Argentina/Buenos_Aires',
+})}
                     </p>
                     <p className="text-xs text-zinc-500 flex items-center gap-1">
                       <Clock size={12} />
