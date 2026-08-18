@@ -33,39 +33,29 @@ export async function getMyRoutines() {
 }
 
 export async function getTodayProgress(routineId: string, date?: Date) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("No autenticado");
+  const { userId } = await auth()
+  if (!userId) throw new Error("No autenticado")
 
-  const member = await prisma.member.findFirst({
-    where: { clerkUserId: userId },
-  });
-  if (!member) throw new Error("Miembro no encontrado");
+  const member = await prisma.member.findFirst({ where: { clerkUserId: userId } })
+  if (!member) throw new Error("Miembro no encontrado")
 
-  const targetDate = date || new Date();
-  const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
-  const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
+  const TZ = 'America/Argentina/Buenos_Aires'
+  const now = date || new Date()
+  const dateStr = now.toLocaleDateString('en-CA', { timeZone: TZ }) // "2026-08-18"
+  const startOfDay = new Date(`${dateStr}T00:00:00-03:00`)
+  const endOfDay   = new Date(`${dateStr}T23:59:59-03:00`)
 
-  const logs = await prisma.progressLog.findMany({
+  return prisma.progressLog.findMany({
     where: {
       routineId,
       memberId: member.id,
-      date: {
-        gte: startOfDay,
-        lte: endOfDay,
-      },
+      date: { gte: startOfDay, lte: endOfDay },
     },
     select: {
-      id: true,
-      exerciseId: true,
-      setsCompleted: true,
-      repsCompleted: true,
-      weightUsed: true,
-      notes: true,
-      date: true,
+      id: true, exerciseId: true, setsCompleted: true,
+      repsCompleted: true, weightUsed: true, notes: true, date: true,
     },
-  });
-
-  return logs;
+  })
 }
 
 export async function logProgress(data: {
