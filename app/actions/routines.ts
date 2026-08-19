@@ -159,3 +159,51 @@ export async function getExerciseProgress(exerciseId: string, days: number = 90)
 
   return logs;
 }
+
+// Agregar al final de app/actions/routines.ts del proyecto CLIENTE
+
+export async function startSession(routineId: string, routineDayId: string) {
+  const { userId } = await auth()
+  if (!userId) throw new Error('No autenticado')
+
+  const member = await prisma.member.findFirst({ where: { clerkUserId: userId } })
+  if (!member) throw new Error('Miembro no encontrado')
+
+  // Si ya hay una sesión en curso para este día, la devolvemos
+  const existing = await prisma.sessionLog.findFirst({
+    where: { routineDayId, memberId: member.id, completedAt: null },
+  })
+  if (existing) return existing
+
+  return prisma.sessionLog.create({
+    data: { routineId, routineDayId, memberId: member.id },
+  })
+}
+
+export async function completeSession(sessionLogId: string) {
+  const { userId } = await auth()
+  if (!userId) throw new Error('No autenticado')
+
+  return prisma.sessionLog.update({
+    where: { id: sessionLogId },
+    data: { completedAt: new Date() },
+  })
+}
+
+export async function getSessionProgress(routineDayId: string) {
+  const { userId } = await auth()
+  if (!userId) throw new Error('No autenticado')
+
+  const member = await prisma.member.findFirst({ where: { clerkUserId: userId } })
+  if (!member) throw new Error('Miembro no encontrado')
+
+  return prisma.sessionLog.findFirst({
+    where: { routineDayId, memberId: member.id },
+    orderBy: { startedAt: 'desc' },
+    include: {
+      progressLogs: {
+        orderBy: { date: 'asc' },
+      },
+    },
+  })
+}

@@ -1,18 +1,17 @@
-export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic"
 
-import { getMyRoutines, getTodayProgress } from "@/app/actions/routines";
-import { RoutineClientView } from "@/components/routines/RoutineClientView";
-import { Button } from "@/components/ui/button";
-import { Dumbbell, Target, Calendar, History, Flame, Trophy } from "lucide-react";
-import Link from "next/link";
+import { getMyRoutines } from "@/app/actions/routines"
+import { RoutineClientView } from "@/components/routines/RoutineClientView"
+import { Dumbbell, Target, Calendar, Trophy } from "lucide-react"
 
 const goals: Record<string, string> = {
   HYPERTROPHY: "Hipertrofia", STRENGTH: "Fuerza", ENDURANCE: "Resistencia",
   WEIGHT_LOSS: "Pérdida de peso", MAINTENANCE: "Mantenimiento", REHABILITATION: "Rehabilitación",
-};
+}
 
 export default async function RutinaPage() {
-  const routines = await getMyRoutines();
+  const routines = await getMyRoutines()
+
   if (routines.length === 0) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center px-4">
@@ -21,82 +20,67 @@ export default async function RutinaPage() {
         </div>
         <h2 className="text-xl font-bold text-foreground mb-2">Sin rutina asignada</h2>
         <p className="text-sm text-muted-foreground text-center max-w-xs">
-          Todavía no tenés una rutina activa. Consultá con tu entrenador para que te asigne una.
+          Todavía no tenés una rutina activa. Consultá con tu entrenador.
         </p>
       </div>
-    );
+    )
   }
 
-  const routine = routines[0];
-  const todayProgressRaw = await getTodayProgress(routine.id);
-  const todayProgress = todayProgressRaw.map((log) => ({ ...log, weightUsed: Number(log.weightUsed) }));
-
-  const totalExercises = routine.days.reduce((sum, d) => sum + d.exercises.length, 0);
-  const completedSetsToday = todayProgress.reduce((sum, log) => sum + log.setsCompleted, 0);
-  const completedExercises = new Set(todayProgress.map((log) => log.exerciseId)).size;
+  const routine = routines[0] as any
+  const totalSessions = routine.days.length
+  const completedSessions = routine.days.filter(
+    (d: any) => d.sessionLogs[0]?.completedAt
+  ).length
+  const pct = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto pb-20">
-      <div className="space-y-4">
-        <div className="flex items-start justify-between gap-4">
+    <div className="space-y-5 pb-20">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">{routine.name}</h1>
+        <div className="flex flex-wrap items-center gap-2 mt-2">
+          {routine.goal && (
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+              <Target size={11} /> {goals[routine.goal]}
+            </span>
+          )}
+          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+            <Calendar size={11} /> {routine.frequencyPerWeek} ses/sem · {routine.totalWeeks} semanas
+          </span>
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="bg-card border border-border/60 rounded-2xl p-4 space-y-3">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{routine.name}</h1>
-            <div className="flex flex-wrap items-center gap-3 mt-2">
-              {routine.goal && (
-                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
-                  <Target size={12} />{goals[routine.goal]}
-                </span>
-              )}
-              {routine.frequencyPerWeek && (
-                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
-                  <Calendar size={12} />{routine.frequencyPerWeek} días/semana
-                </span>
-              )}
-            </div>
+            <p className="text-sm font-semibold text-foreground">Progreso del plan</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {completedSessions} de {totalSessions} sesiones completadas
+            </p>
           </div>
-          <Link href="/rutina/historial">
-            <Button variant="outline" size="sm" className="gap-2 shrink-0">
-              <History size={14} /><span className="hidden sm:inline">Historial</span>
-            </Button>
-          </Link>
+          <p className="text-2xl font-bold text-foreground">{pct}%</p>
         </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-card border border-border/60 rounded-xl p-3 text-center">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-2">
-              <Flame size={16} className="text-primary" />
-            </div>
-            <p className="text-lg font-bold text-foreground">{completedExercises}</p>
-            <p className="text-[10px] text-muted-foreground">Ejercicios hoy</p>
-          </div>
-          <div className="bg-card border border-border/60 rounded-xl p-3 text-center">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center mx-auto mb-2">
-              <Trophy size={16} className="text-amber-500" />
-            </div>
-            <p className="text-lg font-bold text-foreground">{totalExercises}</p>
-            <p className="text-[10px] text-muted-foreground">Total ejercicios</p>
-          </div>
-          <div className="bg-card border border-border/60 rounded-xl p-3 text-center">
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center mx-auto mb-2">
-              <Dumbbell size={16} className="text-emerald-500" />
-            </div>
-            <p className="text-lg font-bold text-foreground">{completedSetsToday}</p>
-            <p className="text-[10px] text-muted-foreground">Series hoy</p>
-          </div>
+        <div className="h-2 bg-muted rounded-full overflow-hidden">
+          <div
+            className="h-full bg-emerald-500 rounded-full transition-all duration-700"
+            style={{ width: `${pct}%` }}
+          />
         </div>
-
-        {routine.description && (
-          <p className="text-sm text-muted-foreground leading-relaxed bg-muted/50 rounded-lg p-3">{routine.description}</p>
+        {completedSessions === totalSessions && totalSessions > 0 && (
+          <div className="flex items-center gap-2 text-xs text-emerald-500 font-medium">
+            <Trophy size={13} /> ¡Plan completado! 🎉
+          </div>
         )}
       </div>
 
-      <RoutineClientView routine={routine} todayProgress={todayProgress} />
+      {routine.description && (
+        <p className="text-sm text-muted-foreground bg-muted/40 rounded-xl px-4 py-3">
+          {routine.description}
+        </p>
+      )}
 
-      <div className="fixed bottom-6 right-4 sm:hidden">
-        <Link href="/rutina/historial">
-          <Button size="icon" className="h-12 w-12 rounded-full shadow-lg"><History size={20} /></Button>
-        </Link>
-      </div>
+      <RoutineClientView routine={routine} />
     </div>
-  );
+  )
 }

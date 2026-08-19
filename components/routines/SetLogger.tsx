@@ -1,248 +1,262 @@
-"use client";
+// components/routines/SetLogger.tsx
+"use client"
 
-import { useState } from "react";
-import { Check, Trash2, Dumbbell } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { useState } from "react"
+import { Check, Trash2, Dumbbell } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
 
 interface SetData {
-  id: string;
-  setNumber: number;
-  reps: string;
-  weight: number;
-  completed: boolean;
-  notes?: string;
+  id: string
+  setNumber: number
+  reps: string
+  weight: number
+  completed: boolean
+  logId?: string   // ID real del log para poder borrarlo
+  notes?: string
 }
 
 interface SetLoggerProps {
-  targetSets: number;
-  targetReps: string;
+  targetSets: number
+  targetReps: string
+  targetWeight?: number   // ← nuevo: peso de referencia del entrenador
   existingLogs: {
-    id: string;
-    setsCompleted: number;
-    repsCompleted: string;
-    weightUsed: number;
-    notes: string | null;
-  }[];
-  onLogSet: (data: { reps: string; weight: number; notes?: string }) => Promise<void>;
-  onDeleteLog: (logId: string) => Promise<void>;
+    id: string
+    setsCompleted: number
+    repsCompleted: string
+    weightUsed: number
+    notes: string | null
+  }[]
+  onLogSet: (data: { reps: string; weight: number; notes?: string }) => Promise<void>
+  onDeleteLog: (logId: string) => Promise<void>
 }
 
 export function SetLogger({
   targetSets,
   targetReps,
+  targetWeight,
   existingLogs,
   onLogSet,
   onDeleteLog,
 }: SetLoggerProps) {
+  const defaultWeight = targetWeight ?? 0
+
   const [sets, setSets] = useState<SetData[]>(() => {
-    // Convert existing logs to set format
-    const initialSets: SetData[] = [];
-    existingLogs.forEach((log) => {
+    const initial: SetData[] = []
+
+    // Expand existing logs into individual sets
+    existingLogs.forEach(log => {
       for (let i = 0; i < log.setsCompleted; i++) {
-        initialSets.push({
+        initial.push({
           id: `${log.id}-${i}`,
-          setNumber: initialSets.length + 1,
+          setNumber: initial.length + 1,
           reps: log.repsCompleted,
           weight: log.weightUsed,
           completed: true,
-          notes: log.notes || undefined,
-        });
+          logId: log.id,
+        })
       }
-    });
-    // Fill remaining target sets
-    while (initialSets.length < targetSets) {
-      initialSets.push({
-        id: `pending-${initialSets.length}`,
-        setNumber: initialSets.length + 1,
+    })
+
+    // Fill remaining pending sets, inheriting last completed weight or ref weight
+    const lastWeight = initial.length > 0
+      ? initial[initial.length - 1].weight
+      : defaultWeight
+
+    while (initial.length < targetSets) {
+      initial.push({
+        id: `pending-${initial.length}`,
+        setNumber: initial.length + 1,
         reps: targetReps,
-        weight: initialSets.length > 0 ? initialSets[initialSets.length - 1].weight : 0,
+        weight: lastWeight,
         completed: false,
-      });
+      })
     }
-    return initialSets;
-  });
 
-  const [activeSetIndex, setActiveSetIndex] = useState(() => {
-    const firstIncomplete = sets.findIndex((s) => !s.completed);
-    return firstIncomplete >= 0 ? firstIncomplete : sets.length;
-  });
+    return initial
+  })
 
-  const [saving, setSaving] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(() => {
+    const first = sets.findIndex(s => !s.completed)
+    return first >= 0 ? first : sets.length
+  })
 
-  const handleCompleteSet = async (index: number) => {
-    const set = sets[index];
-    if (set.weight <= 0) return;
+  const [saving, setSaving] = useState(false)
 
-    setSaving(true);
+  const completedCount = sets.filter(s => s.completed).length
+  const isAllComplete  = completedCount >= targetSets
+
+  function updateSet(idx: number, field: keyof SetData, value: any) {
+    setSets(prev => {
+      const next = [...prev]
+      next[idx] = { ...next[idx], [field]: value }
+      return next
+    })
+  }
+
+  async function handleComplete(idx: number) {
+    const set = sets[idx]
+    if (set.weight <= 0) return
+    setSaving(true)
     try {
-      await onLogSet({
-        reps: set.reps,
-        weight: set.weight,
-        notes: set.notes,
-      });
+      await onLogSet({ reps: set.reps, weight: set.weight, notes: set.notes })
+      setSets(prev => {
+        const next = [...prev]
+        next[idx] = { ...next[idx], completed: true }
 
-      const newSets = [...sets];
-      newSets[index] = { ...set, completed: true };
-      setSets(newSets);
-
-      // Move to next set
-      const nextIncomplete = newSets.findIndex((s, i) => i > index && !s.completed);
-      if (nextIncomplete >= 0) {
-        setActiveSetIndex(nextIncomplete);
-      } else if (newSets.length < targetSets + 2) {
-        // Add extra set option
-        newSets.push({
-          id: `extra-${newSets.length}`,
-          setNumber: newSets.length + 1,
-          reps: set.reps,
-          weight: set.weight,
-          completed: false,
-        });
-        setSets(newSets);
-        setActiveSetIndex(newSets.length - 1);
-      }
+        // Auto-advance or add extra set
+        const nextPending = next.findIndex((s, i) => i > idx && !s.completed)
+        if (nextPending >= 0) {
+          setActiveIdx(nextPending)
+        } else {
+          // Offer one extra set
+          const extra: SetData = {
+            id: `extra-${next.length}`,
+            setNumber: next.length + 1,
+            reps: set.reps,
+            weight: set.weight,
+            completed: false,
+          }
+          next.push(extra)
+          setActiveIdx(next.length - 1)
+        }
+        return next
+      })
     } catch (err) {
-      console.error(err);
+      console.error(err)
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
-  const handleUpdateSet = (index: number, field: keyof SetData, value: any) => {
-    const newSets = [...sets];
-    newSets[index] = { ...newSets[index], [field]: value };
-    setSets(newSets);
-  };
-
-  const completedCount = sets.filter((s) => s.completed).length;
-  const isAllComplete = completedCount >= targetSets;
+  async function handleDelete(idx: number) {
+    const set = sets[idx]
+    if (!set.logId) return
+    await onDeleteLog(set.logId)
+    setSets(prev =>
+      prev
+        .filter((_, i) => i !== idx)
+        .map((s, i) => ({ ...s, setNumber: i + 1 }))
+    )
+  }
 
   return (
     <div className="space-y-2">
-      {/* Sets grid */}
-      <div className="grid grid-cols-1 gap-1.5">
-        {sets.map((set, index) => (
-          <div
-            key={set.id}
-            className={cn(
-              "flex items-center gap-2 p-2 rounded-lg transition-all duration-200",
-              set.completed
-                ? "bg-emerald-500/5 border border-emerald-500/10"
-                : index === activeSetIndex
-                ? "bg-primary/5 border border-primary/20 ring-1 ring-primary/10"
-                : "bg-muted/30 border border-transparent"
-            )}
-          >
-            {/* Set number / check */}
+      {/* Reference weight hint */}
+      {targetWeight && targetWeight > 0 && (
+        <div className="flex items-center gap-1.5 px-1 mb-1">
+          <Dumbbell size={11} className="text-primary/50" />
+          <span className="text-[11px] text-muted-foreground">
+            Peso prescripto: <span className="font-semibold text-foreground">{targetWeight} kg</span>
+          </span>
+        </div>
+      )}
+
+      {/* Sets */}
+      <div className="space-y-1.5">
+        {sets.map((set, idx) => {
+          const isActive = idx === activeIdx && !set.completed
+          return (
             <div
+              key={set.id}
               className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-xl border transition-all duration-200",
+                set.completed
+                  ? "bg-emerald-500/5 border-emerald-500/15"
+                  : isActive
+                  ? "bg-primary/5 border-primary/20 ring-1 ring-primary/10"
+                  : "bg-muted/30 border-transparent"
+              )}
+            >
+              {/* Set badge */}
+              <div className={cn(
                 "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-colors",
                 set.completed
                   ? "bg-emerald-500 text-white"
-                  : index === activeSetIndex
+                  : isActive
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground"
-              )}
-            >
-              {set.completed ? <Check size={14} /> : set.setNumber}
-            </div>
+              )}>
+                {set.completed ? <Check size={13} /> : set.setNumber}
+              </div>
 
-            {/* Reps input */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
+              {/* Reps + weight inputs */}
+              <div className="flex items-center gap-1.5 flex-1">
                 <Input
                   type="text"
                   value={set.reps}
-                  onChange={(e) => handleUpdateSet(index, "reps", e.target.value)}
+                  onChange={e => updateSet(idx, "reps", e.target.value)}
                   disabled={set.completed}
-                  className={cn(
-                    "h-7 text-xs text-center w-14",
-                    set.completed && "opacity-50"
-                  )}
+                  className={cn("h-7 text-xs text-center w-14", set.completed && "opacity-50")}
                   placeholder="Reps"
                 />
-                <span className="text-[10px] text-muted-foreground">reps</span>
+                <span className="text-[10px] text-muted-foreground">×</span>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    step="0.5"
+                    min={0}
+                    value={set.weight || ""}
+                    onChange={e => updateSet(idx, "weight", parseFloat(e.target.value) || 0)}
+                    disabled={set.completed}
+                    className={cn("h-7 text-xs text-center w-16 pr-5", set.completed && "opacity-50")}
+                    placeholder={targetWeight ? `${targetWeight}` : "0"}
+                  />
+                  <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground pointer-events-none">
+                    kg
+                  </span>
+                </div>
 
-                <Dumbbell size={10} className="text-muted-foreground/40 ml-1" />
-
-                <Input
-                  type="number"
-                  step="0.5"
-                  value={set.weight || ""}
-                  onChange={(e) =>
-                    handleUpdateSet(index, "weight", parseFloat(e.target.value) || 0)
-                  }
-                  disabled={set.completed}
-                  className={cn(
-                    "h-7 text-xs text-center w-16",
-                    set.completed && "opacity-50"
-                  )}
-                  placeholder="Peso"
-                />
-                <span className="text-[10px] text-muted-foreground">kg</span>
-              </div>
-            </div>
-
-            {/* Notes */}
-            {!set.completed && index === activeSetIndex && (
-              <Input
-                type="text"
-                value={set.notes || ""}
-                onChange={(e) => handleUpdateSet(index, "notes", e.target.value)}
-                className="h-7 text-[10px] w-24 hidden sm:block"
-                placeholder="Nota..."
-              />
-            )}
-
-            {/* Action */}
-            {set.completed ? (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-muted-foreground/40 hover:text-destructive"
-                onClick={() => {
-                  // Find and delete the corresponding log
-                  const logIndex = Math.floor(index / (existingLogs[0]?.setsCompleted || 1));
-                  if (existingLogs[logIndex]) {
-                    onDeleteLog(existingLogs[logIndex].id);
-                  }
-                }}
-              >
-                <Trash2 size={10} />
-              </Button>
-            ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "h-6 px-2 text-[10px] font-medium",
-                  index === activeSetIndex
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                    : "text-muted-foreground hover:text-foreground"
+                {/* Inline note for active set */}
+                {isActive && (
+                  <Input
+                    type="text"
+                    value={set.notes || ""}
+                    onChange={e => updateSet(idx, "notes", e.target.value)}
+                    className="h-7 text-[10px] flex-1 hidden sm:block"
+                    placeholder="Nota..."
+                  />
                 )}
-                onClick={() => handleCompleteSet(index)}
-                disabled={saving || set.weight <= 0}
-              >
-                {saving ? "..." : "OK"}
-              </Button>
-            )}
-          </div>
-        ))}
+              </div>
+
+              {/* Action */}
+              {set.completed ? (
+                <button
+                  onClick={() => handleDelete(idx)}
+                  className="p-1 text-muted-foreground/30 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 size={12} />
+                </button>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() => handleComplete(idx)}
+                  disabled={saving || set.weight <= 0}
+                  className={cn(
+                    "h-7 px-3 text-[11px] font-bold transition-all",
+                    isActive
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : "bg-transparent text-muted-foreground hover:text-foreground border border-transparent hover:border-border"
+                  )}
+                >
+                  {saving ? "..." : "OK"}
+                </Button>
+              )}
+            </div>
+          )
+        })}
       </div>
 
       {/* Summary */}
       {completedCount > 0 && (
-        <div className="flex items-center justify-between text-[10px] text-muted-foreground px-1">
-          <span>
-            {completedCount} de {targetSets} series completadas
-          </span>
+        <div className="flex items-center justify-between text-[10px] text-muted-foreground px-1 pt-0.5">
+          <span>{completedCount}/{targetSets} series</span>
           {isAllComplete && (
-            <span className="text-emerald-400 font-medium">¡Ejercicio completado! 🎉</span>
+            <span className="text-emerald-400 font-medium">Ejercicio completado ✓</span>
           )}
         </div>
       )}
     </div>
-  );
+  )
 }
