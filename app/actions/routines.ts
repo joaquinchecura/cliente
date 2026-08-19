@@ -17,11 +17,16 @@ export async function getMyRoutines() {
     where: { memberId: member.id, isActive: true },
     include: {
       days: {
-        orderBy: { order: "asc" },
+        orderBy: { sessionNumber: "asc" },
         include: {
           exercises: {
             orderBy: { order: "asc" },
             include: { exercise: true },
+          },
+          sessionLogs: {
+            where: { memberId: member.id },
+            orderBy: { startedAt: "desc" },
+            take: 1,
           },
         },
       },
