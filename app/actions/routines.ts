@@ -59,35 +59,35 @@ export async function getTodayProgress(routineId: string, date?: Date) {
 }
 
 export async function logProgress(data: {
-  routineId: string;
-  exerciseId: string;
-  setsCompleted: number;
-  repsCompleted: string;
-  weightUsed: number;
-  notes?: string;
+  routineId: string
+  exerciseId: string
+  sessionLogId?: string
+  setsCompleted: number
+  repsCompleted: string
+  weightUsed: number
+  notes?: string
 }) {
-  const { userId } = await auth();
-  if (!userId) throw new Error("No autenticado");
+  const { userId } = await auth()
+  if (!userId) throw new Error('No autenticado')
 
-  const member = await prisma.member.findFirst({
-    where: { clerkUserId: userId },
-  });
-  if (!member) throw new Error("Miembro no encontrado");
+  const member = await prisma.member.findFirst({ where: { clerkUserId: userId } })
+  if (!member) throw new Error('Miembro no encontrado')
 
   const log = await prisma.progressLog.create({
     data: {
       routineId: data.routineId,
       exerciseId: data.exerciseId,
       memberId: member.id,
+      sessionLogId: data.sessionLogId ?? null,
       setsCompleted: data.setsCompleted,
       repsCompleted: data.repsCompleted,
       weightUsed: data.weightUsed,
-      notes: data.notes || null,
+      notes: data.notes ?? null,
     },
-  });
+  })
 
-  revalidatePath("/rutina");
-  return log;
+  revalidatePath('/rutina')
+  return log
 }
 
 export async function deleteProgressLog(logId: string) {
