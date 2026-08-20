@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { 
-  Home, Calendar, Dumbbell, TrendingUp, 
+  Home, Calendar, Dumbbell, TrendingUp, History,
   QrCode, CreditCard, Newspaper, User,
   Menu, X 
 } from "lucide-react";
@@ -13,6 +13,7 @@ const navItems = [
   { href: "/", label: "Inicio", icon: Home },
   { href: "/clases", label: "Clases", icon: Calendar },
   { href: "/rutina", label: "Mi Rutina", icon: Dumbbell },
+  { href: "/rutina/historial", label: "Historial de rutina", icon: History },
   { href: "/progreso", label: "Progreso", icon: TrendingUp },
   { href: "/asistencias", label: "Asistencias", icon: QrCode },
   { href: "/pagos", label: "Pagos", icon: CreditCard },

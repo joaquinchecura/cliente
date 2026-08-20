@@ -1,8 +1,10 @@
+// app/(dashboard)/rutina/page.tsx
 export const dynamic = "force-dynamic"
 
 import { getMyRoutines } from "@/app/actions/routines"
 import { RoutineClientView } from "@/components/routines/RoutineClientView"
-import { Dumbbell, Target, Calendar, Trophy } from "lucide-react"
+import { Dumbbell, Target, Calendar, Trophy, History, ChevronRight } from "lucide-react"
+import Link from "next/link"
 
 const goals: Record<string, string> = {
   HYPERTROPHY: "Hipertrofia", STRENGTH: "Fuerza", ENDURANCE: "Resistencia",
@@ -29,25 +31,35 @@ export default async function RutinaPage() {
   const routine = routines[0] as any
   const totalSessions = routine.days.length
   const completedSessions = routine.days.filter(
-    (d: any) => d.sessionLogs[0]?.completedAt
+    (d: any) => d.sessionLogs?.[0]?.completedAt
   ).length
   const pct = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0
 
   return (
     <div className="space-y-5 pb-20">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">{routine.name}</h1>
-        <div className="flex flex-wrap items-center gap-2 mt-2">
-          {routine.goal && (
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{routine.name}</h1>
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            {routine.goal && (
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
+                <Target size={11} /> {goals[routine.goal]}
+              </span>
+            )}
             <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
-              <Target size={11} /> {goals[routine.goal]}
+              <Calendar size={11} /> {routine.frequencyPerWeek} ses/sem · {routine.totalWeeks} semanas
             </span>
-          )}
-          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full">
-            <Calendar size={11} /> {routine.frequencyPerWeek} ses/sem · {routine.totalWeeks} semanas
-          </span>
+          </div>
         </div>
+
+        {/* Acceso rápido a historial — desktop */}
+        <Link
+          href="/rutina/historial"
+          className="hidden sm:flex shrink-0 items-center gap-1.5 px-3 py-2 rounded-xl bg-muted hover:bg-muted/70 text-muted-foreground hover:text-foreground text-xs font-medium transition-colors"
+        >
+          <History size={14} /> Historial
+        </Link>
       </div>
 
       {/* Progress bar */}
@@ -73,6 +85,21 @@ export default async function RutinaPage() {
           </div>
         )}
       </div>
+
+      {/* Card de acceso a historial — mobile, más visible que un ícono suelto */}
+      <Link
+        href="/rutina/historial"
+        className="sm:hidden flex items-center gap-3 bg-card border border-border/60 rounded-2xl p-4 hover:border-border transition-colors group"
+      >
+        <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center shrink-0">
+          <History size={18} className="text-violet-400" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground">Ver historial</p>
+          <p className="text-xs text-muted-foreground">Series, PRs y progreso por ejercicio</p>
+        </div>
+        <ChevronRight size={16} className="text-muted-foreground/40 group-hover:text-muted-foreground transition-colors shrink-0" />
+      </Link>
 
       {routine.description && (
         <p className="text-sm text-muted-foreground bg-muted/40 rounded-xl px-4 py-3">
