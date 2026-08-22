@@ -18,10 +18,10 @@ export default function SignInPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight">
-              Cultiva Fitness
+              Cultiva Fitness MI PLAN
             </h1>
             <p className="text-sm text-muted-foreground mt-1.5">
-              Accedé a tu rutina y seguí tu progreso
+              Accedé a tu App y seguí tu progreso
             </p>
           </div>
         </div>

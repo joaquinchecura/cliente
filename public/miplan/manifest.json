@@ -1,0 +1,16 @@
+{
+  "name": "MiPlan - Cultiva Fitness",
+  "short_name": "MiPlan",
+  "description": "Tu plan de entrenamiento",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050508",
+  "theme_color": "#050508",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    { "src": "/miplan/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/miplan/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/miplan/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

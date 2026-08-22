@@ -8,7 +8,7 @@ const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "CultivaFitness",
+  title: "CultivaFitness MIPLAN",
   description: "App del cliente CultivaFitness",
 };
 
