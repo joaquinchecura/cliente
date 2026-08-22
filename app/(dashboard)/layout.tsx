@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { 
   Home, Calendar, Dumbbell, TrendingUp, History,
-  QrCode, CreditCard, Newspaper, User 
+  QrCode, CreditCard, Newspaper, User, CalendarCheck
 } from "lucide-react";
 import MobileMenu from "./MobileMenu";
 import UserMenu from "./UserMenu";
+import WhatsAppFloat from "@/components/WhatsAppFloat";
 
 const navItems = [
   { href: "/", label: "Inicio", icon: Home },
   { href: "/clases", label: "Clases", icon: Calendar },
+  { href: "/reservas", label: "Reservas", icon: CalendarCheck },
   { href: "/rutina", label: "Mi Rutina", icon: Dumbbell },
   { href: "/rutina/historial", label: "Historial de rutina", icon: History },
   { href: "/progreso", label: "Progreso", icon: TrendingUp },
@@ -66,6 +68,9 @@ export default function DashboardLayout({
           {children}
         </div>
       </main>
+
+      {/* WhatsApp flotante — visible en toda la app */}
+      <WhatsAppFloat />
     </div>
   );
 }
