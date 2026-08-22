@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { getMyPTSessions } from '@/app/actions/pt-sessions'
 import {
-  Dumbbell, Clock, MapPin, CheckCircle, XCircle,
+  UserCircle2, Clock, MapPin, CheckCircle, XCircle,
   UserX, Package, Calendar,
 } from 'lucide-react'
 
@@ -21,7 +21,7 @@ export default async function ReservasPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-white">Reservas</h2>
+        <h2 className="text-2xl font-bold text-white">Personal Trainer</h2>
         <p className="text-zinc-400 mt-1">Tus sesiones de entrenamiento personal</p>
       </div>
 
@@ -40,7 +40,7 @@ export default async function ReservasPage() {
             </div>
           </div>
           <div className="flex items-center justify-between text-sm mb-1.5">
-            <span className="text-zinc-400">Sesiones restantes</span>
+            <span className="text-zinc-400">Sesiones de PT restantes</span>
             <span className="text-white font-bold">{packageInfo.remaining} / {packageInfo.total}</span>
           </div>
           <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
@@ -52,15 +52,15 @@ export default async function ReservasPage() {
         </div>
       )}
 
-      {/* Próximas sesiones */}
+      {/* Próximas sesiones de PT */}
       <div className="space-y-3">
         <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
-          Próximas sesiones
+          Próximas sesiones de PT
         </h3>
         {upcoming.length === 0 ? (
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-8 text-center">
-            <Dumbbell className="mx-auto mb-2 text-zinc-600" size={32} />
-            <p className="text-zinc-500 text-sm">Sin sesiones próximas</p>
+            <UserCircle2 className="mx-auto mb-2 text-zinc-600" size={32} />
+            <p className="text-zinc-500 text-sm">Sin sesiones de PT próximas</p>
             <p className="text-zinc-600 text-xs mt-1">Coordiná con tu entrenador para reservar</p>
           </div>
         ) : (
@@ -70,8 +70,8 @@ export default async function ReservasPage() {
               return (
                 <div key={b.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-500/10 rounded-lg">
-                      <Dumbbell size={16} className="text-blue-400" />
+                    <div className="p-2 bg-violet-500/10 rounded-lg">
+                      <UserCircle2 size={16} className="text-violet-400" />
                     </div>
                     <div>
                       <p className="text-white font-medium">{b.schedule.activity.name}</p>
@@ -101,11 +101,11 @@ export default async function ReservasPage() {
         )}
       </div>
 
-      {/* Historial */}
+      {/* Historial de PT */}
       {past.length > 0 && (
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
-            Historial
+            Historial de PT
           </h3>
           <div className="space-y-2">
             {past.slice(0, 15).map(b => {

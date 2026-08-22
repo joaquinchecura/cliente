@@ -9,7 +9,7 @@ import UserMenu from "./UserMenu";
 const navItems = [
   { href: "/", label: "Inicio", icon: Home },
   { href: "/clases", label: "Clases", icon: Calendar },
-  { href: "/reservas", label: "Reservas", icon: CalendarCheck },
+  { href: "/personaltrainer", label: "Personal Trainer", icon: UserCircle2 },
   { href: "/rutina", label: "Mi Rutina", icon: Dumbbell },
   { href: "/rutina/historial", label: "Historial de rutina", icon: History },
   { href: "/progreso", label: "Progreso", icon: TrendingUp },

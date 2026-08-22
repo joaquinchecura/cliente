@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { 
   Dumbbell, Calendar, QrCode, TrendingUp, 
   CreditCard, ShieldCheck, Newspaper, User,
-  Clock, AlertCircle
+  Clock, AlertCircle, UserCircle2
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -88,13 +88,19 @@ export default async function DashboardPage() {
 
   const [
     routinesCount,
-    bookingsCount,
+    classBookingsCount,
+    ptBookingsCount,
     attendancesCount,
     paymentsCount,
     lastComp,
   ] = await Promise.all([
     prisma.routine.count({ where: { memberId: member.id, isActive: true } }),
-    prisma.booking.count({ where: { memberId: member.id, status: "CONFIRMED" } }),
+    prisma.booking.count({
+      where: { memberId: member.id, status: "CONFIRMED", schedule: { maxCapacity: { gt: 1 } } },
+    }),
+    prisma.booking.count({
+      where: { memberId: member.id, status: "CONFIRMED", schedule: { maxCapacity: 1 } },
+    }),
     prisma.attendance.count({ where: { memberId: member.id, status: "ALLOWED" } }),
     prisma.payment.count({ where: { memberId: member.id, status: "COMPLETED" } }),
     prisma.bodyComposition.findFirst({
@@ -121,9 +127,13 @@ export default async function DashboardPage() {
     ? `${routinesCount} rutina${routinesCount > 1 ? "s" : ""} activa${routinesCount > 1 ? "s" : ""}`
     : "Sin rutinas asignadas";
 
-  const bookingSubtitle = bookingsCount > 0
-    ? `${bookingsCount} reserva${bookingsCount > 1 ? "s" : ""} confirmada${bookingsCount > 1 ? "s" : ""}`
+  const classBookingSubtitle = classBookingsCount > 0
+    ? `${classBookingsCount} reserva${classBookingsCount > 1 ? "s" : ""} confirmada${classBookingsCount > 1 ? "s" : ""}`
     : "Sin reservas esta semana";
+
+  const ptBookingSubtitle = ptBookingsCount > 0
+    ? `${ptBookingsCount} sesión${ptBookingsCount > 1 ? "es" : ""} confirmada${ptBookingsCount > 1 ? "s" : ""}`
+    : "Sin sesiones coordinadas";
 
   const attendanceSubtitle = attendancesCount > 0
     ? `${attendancesCount} asistencia${attendancesCount > 1 ? "s" : ""} · Mostrá tu QR`
@@ -194,17 +204,27 @@ export default async function DashboardPage() {
           subtitle={routineSubtitle}
         />
 
-        {/* 2. Mis Reservas */}
+        {/* 2. Mis reservas de clases */}
         <ActionCard
           href="/clases"
           icon={Calendar}
           iconColor="text-blue-400"
           iconBg="bg-blue-500/15"
-          title="Mis Reservas"
-          subtitle={bookingSubtitle}
+          title="Mis reservas de clases"
+          subtitle={classBookingSubtitle}
         />
 
-        {/* 3. Acceso al Gym (QR) */}
+        {/* 3. Mis reservas de PT */}
+        <ActionCard
+          href="/personaltrainer"
+          icon={UserCircle2}
+          iconColor="text-violet-400"
+          iconBg="bg-violet-500/15"
+          title="Mis reservas de PT"
+          subtitle={ptBookingSubtitle}
+        />
+
+        {/* 4. Acceso al Gym (QR) */}
         <ActionCard
           href="/asistencias"
           icon={QrCode}
@@ -214,7 +234,7 @@ export default async function DashboardPage() {
           subtitle={attendanceSubtitle}
         />
 
-        {/* 4. Mi Progreso */}
+        {/* 5. Mi Progreso */}
         <ActionCard
           href="/progreso"
           icon={TrendingUp}
@@ -224,7 +244,7 @@ export default async function DashboardPage() {
           subtitle={progressSubtitle}
         />
 
-        {/* 5. Pagos */}
+        {/* 6. Pagos */}
         <ActionCard
           href="/pagos"
           icon={CreditCard}
@@ -234,7 +254,7 @@ export default async function DashboardPage() {
           subtitle={paymentSubtitle}
         />
 
-        {/* 6. Membresía (destacada) */}
+        {/* 7. Membresía (destacada) */}
         <ActionCard
           href="/pagos"
           icon={ShieldCheck}
@@ -246,7 +266,7 @@ export default async function DashboardPage() {
           badge={activeMembership && !isOverdue ? { text: "Activa", color: "text-primary", bg: "bg-primary/20" } : undefined}
         />
 
-        {/* 7. Noticias */}
+        {/* 8. Noticias */}
         <ActionCard
           href="/noticias"
           icon={Newspaper}
@@ -256,7 +276,7 @@ export default async function DashboardPage() {
           subtitle="Últimas novedades del gym"
         />
 
-        {/* 8. Mi Perfil */}
+        {/* 9. Mi Perfil */}
         <ActionCard
           href="/perfil"
           icon={User}
