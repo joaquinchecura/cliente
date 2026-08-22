@@ -114,10 +114,10 @@ export default async function ClasesPage() {
                   <div>
                     <p className="text-white font-medium">{r.schedule.activity.name}</p>
                     <p className="text-sm text-zinc-500">
-                      {new Date(r.schedule.date).toLocaleDateString('es-AR', {
-                        weekday: 'long', day: 'numeric', month: 'long',
-                        timeZone: 'America/Argentina/Buenos_Aires',
-                      })}
+                    {new Date(r.schedule.date).toLocaleDateString('es-AR', {
+  weekday: 'long', day: 'numeric', month: 'long',
+  timeZone: 'UTC',
+})}
                       {' • '}
                       {r.schedule.startTime} - {r.schedule.endTime}
                     </p>
@@ -134,11 +134,10 @@ export default async function ClasesPage() {
       {Object.entries(porFecha).map(([fecha, clases]) => (
         <div key={fecha} className="space-y-3">
           <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
-            {new Date(fecha + 'T00:00:00').toLocaleDateString('es-AR', {
-              weekday: 'long', day: 'numeric', month: 'long',
-              timeZone: 'America/Argentina/Buenos_Aires',
-            })}
-          </h3>
+          {new Date(fecha + 'T00:00:00Z').toLocaleDateString('es-AR', {
+  weekday: 'long', day: 'numeric', month: 'long',
+  timeZone: 'UTC',
+})}
 
           <div className="space-y-2">
             {clases.map((clase) => {
