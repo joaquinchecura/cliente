@@ -134,11 +134,11 @@ export default async function ClasesPage() {
       {Object.entries(porFecha).map(([fecha, clases]) => (
         <div key={fecha} className="space-y-3">
           <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
-          {new Date(fecha + 'T00:00:00Z').toLocaleDateString('es-AR', {
-  weekday: 'long', day: 'numeric', month: 'long',
-  timeZone: 'UTC',
-})}
-
+  {new Date(fecha + 'T00:00:00Z').toLocaleDateString('es-AR', {
+    weekday: 'long', day: 'numeric', month: 'long',
+    timeZone: 'UTC',
+  })}
+</h3>
           <div className="space-y-2">
             {clases.map((clase) => {
               const disponibles = clase.maxCapacity - clase.bookings.length
