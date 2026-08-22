@@ -20,14 +20,7 @@ export const metadata: Metadata = {
     siteName: "MiPlan",
     title: "CultivaFitness MIPLAN",
     description: "App del cliente CultivaFitness",
-    images: [
-      {
-        url: "/miplan/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "MiPlan - Cultiva Fitness",
-      },
-    ],
+    images: [{ url: "/miplan/og-image.png", width: 1200, height: 630, alt: "MiPlan - Cultiva Fitness" }],
   },
   twitter: {
     card: "summary_large_image",
