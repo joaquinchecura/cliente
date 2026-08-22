@@ -5,7 +5,6 @@ import {
 } from "lucide-react";
 import MobileMenu from "./MobileMenu";
 import UserMenu from "./UserMenu";
-import WhatsAppFloat from "@/components/WhatsAppFloat";
 
 const navItems = [
   { href: "/", label: "Inicio", icon: Home },
@@ -68,9 +67,6 @@ export default function DashboardLayout({
           {children}
         </div>
       </main>
-
-      {/* WhatsApp flotante — visible en toda la app */}
-      <WhatsAppFloat />
     </div>
   );
 }
