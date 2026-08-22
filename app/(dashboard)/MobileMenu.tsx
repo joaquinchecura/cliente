@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { 
   Home, Calendar, Dumbbell, TrendingUp, History,
-  QrCode, CreditCard, Newspaper, User,
+  QrCode, CreditCard, Newspaper, User, UserCircle2,
   Menu, X 
 } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";

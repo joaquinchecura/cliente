@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { 
   Home, Calendar, Dumbbell, TrendingUp, History,
-  QrCode, CreditCard, Newspaper, User, CalendarCheck
+  QrCode, CreditCard, Newspaper, User, CalendarCheck, UserCircle2,
 } from "lucide-react";
 import MobileMenu from "./MobileMenu";
 import UserMenu from "./UserMenu";
