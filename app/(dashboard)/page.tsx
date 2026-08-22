@@ -220,7 +220,7 @@ export default async function DashboardPage() {
           icon={UserCircle2}
           iconColor="text-violet-400"
           iconBg="bg-violet-500/15"
-          title="Mis reservas de PT"
+          title="Mis reservas de Personal Trainer"
           subtitle={ptBookingSubtitle}
         />
 
