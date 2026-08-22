@@ -4,57 +4,54 @@ import { prisma } from '@/lib/prisma'
 
 export async function POST(request: Request) {
   try {
-    const { qrData } = await request.json()
-    const [memberId, token] = qrData.split(':')
-
-    if (!memberId || !token) {
-      return NextResponse.json({ error: 'QR inválido' }, { status: 400 })
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const attendance = await prisma.attendance.findFirst({
-      where: { memberId, qrToken: token, status: 'PENDING' },
-      include: { member: true },
-    })
-
-    if (!attendance) {
-      return NextResponse.json({ error: 'QR expirado o ya utilizado' }, { status: 400 })
+    const { scheduleId } = await request.json()
+    if (!scheduleId) {
+      return NextResponse.json({ error: 'scheduleId requerido' }, { status: 400 })
     }
 
-    const tokenAge = Date.now() - attendance.createdAt.getTime()
-    if (tokenAge > 2 * 60 * 1000) {
-      await prisma.attendance.update({ where: { id: attendance.id }, data: { status: 'DENIED' } })
-      return NextResponse.json({ error: 'QR expirado' }, { status: 400 })
+    const member = await prisma.member.findFirst({ where: { clerkUserId: userId } })
+    if (!member) {
+      return NextResponse.json({ error: 'Miembro no encontrado' }, { status: 404 })
     }
 
-    const activeMembership = await prisma.membership.findFirst({
-      where: { memberId, status: 'ACTIVE', endDate: { gte: new Date() } },
+    const schedule = await prisma.schedule.findUnique({
+      where: { id: scheduleId },
+      include: { bookings: { where: { status: 'CONFIRMED' } } },
     })
 
-    if (!activeMembership && attendance.member.status !== 'ACTIVE') {
-      // antes esta rama dejaba el registro colgado en PENDING para siempre
-      await prisma.attendance.update({ where: { id: attendance.id }, data: { status: 'DENIED' } })
-      return NextResponse.json(
-        { error: 'Membresía inactiva', member: attendance.member },
-        { status: 403 }
-      )
+    if (!schedule) {
+      return NextResponse.json({ error: 'Clase no encontrada' }, { status: 404 })
+    }
+    if (schedule.isCancelled) {
+      return NextResponse.json({ error: 'Esta clase fue cancelada' }, { status: 400 })
+    }
+    if (schedule.bookings.length >= schedule.maxCapacity) {
+      return NextResponse.json({ error: 'La clase está completa' }, { status: 400 })
     }
 
-    await prisma.attendance.update({
-      where: { id: attendance.id },
-      data: { status: 'ALLOWED', entryTime: new Date() }, // hora real del escaneo
+    // Evitar duplicados (además de la unique constraint del schema)
+    const existing = await prisma.booking.findFirst({
+      where: { memberId: member.id, scheduleId, status: 'CONFIRMED' },
+    })
+    if (existing) {
+      return NextResponse.json({ error: 'Ya estás anotado en esta clase' }, { status: 400 })
+    }
+
+    const booking = await prisma.booking.create({
+      data: { memberId: member.id, scheduleId, status: 'CONFIRMED' },
     })
 
-    return NextResponse.json({
-      success: true,
-      message: '✅ Acceso permitido',
-      member: {
-        name: `${attendance.member.firstName} ${attendance.member.lastName}`,
-        dni: attendance.member.dni,
-        status: attendance.member.status,
-      },
-    })
-  } catch (error) {
-    console.error('Error:', error)
+    return NextResponse.json(booking, { status: 201 })
+  } catch (error: any) {
+    if (error.code === 'P2002') {
+      return NextResponse.json({ error: 'Ya estás anotado en esta clase' }, { status: 400 })
+    }
+    console.error('Error creating booking:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

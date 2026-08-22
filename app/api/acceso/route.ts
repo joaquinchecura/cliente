@@ -1,0 +1,60 @@
+import { NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
+import { prisma } from '@/lib/prisma'
+
+export async function POST(request: Request) {
+  try {
+    const { qrData } = await request.json()
+    const [memberId, token] = qrData.split(':')
+
+    if (!memberId || !token) {
+      return NextResponse.json({ error: 'QR inválido' }, { status: 400 })
+    }
+
+    const attendance = await prisma.attendance.findFirst({
+      where: { memberId, qrToken: token, status: 'PENDING' },
+      include: { member: true },
+    })
+
+    if (!attendance) {
+      return NextResponse.json({ error: 'QR expirado o ya utilizado' }, { status: 400 })
+    }
+
+    const tokenAge = Date.now() - attendance.createdAt.getTime()
+    if (tokenAge > 2 * 60 * 1000) {
+      await prisma.attendance.update({ where: { id: attendance.id }, data: { status: 'DENIED' } })
+      return NextResponse.json({ error: 'QR expirado' }, { status: 400 })
+    }
+
+    const activeMembership = await prisma.membership.findFirst({
+      where: { memberId, status: 'ACTIVE', endDate: { gte: new Date() } },
+    })
+
+    if (!activeMembership && attendance.member.status !== 'ACTIVE') {
+      // antes esta rama dejaba el registro colgado en PENDING para siempre
+      await prisma.attendance.update({ where: { id: attendance.id }, data: { status: 'DENIED' } })
+      return NextResponse.json(
+        { error: 'Membresía inactiva', member: attendance.member },
+        { status: 403 }
+      )
+    }
+
+    await prisma.attendance.update({
+      where: { id: attendance.id },
+      data: { status: 'ALLOWED', entryTime: new Date() }, // hora real del escaneo
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: '✅ Acceso permitido',
+      member: {
+        name: `${attendance.member.firstName} ${attendance.member.lastName}`,
+        dni: attendance.member.dni,
+        status: attendance.member.status,
+      },
+    })
+  } catch (error) {
+    console.error('Error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}

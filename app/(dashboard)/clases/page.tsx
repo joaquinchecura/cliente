@@ -1,52 +1,65 @@
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'
 
-import { getCurrentMember } from "@/lib/member";
-import { prisma } from "@/lib/prisma";
-import { Calendar, Clock, Users, MapPin, CheckCircle, Dumbbell } from "lucide-react";
-import ReservarClase from "./ReservarClase";
+import { getCurrentMember } from "@/lib/member"
+import { prisma } from "@/lib/prisma"
+import { Calendar, Clock, Users, MapPin, CheckCircle, Dumbbell, TrendingUp } from "lucide-react"
+import ReservarClase from "./ReservarClase"
+import MisReservaCancelar from "./MisReservaCancelar"
 
 export default async function ClasesPage() {
-  const member = await getCurrentMember();
+  const member = await getCurrentMember()
 
-  // Clases disponibles para hoy y próximos 7 días
-  const hoy = new Date();
-  hoy.setHours(0, 0, 0, 0);
-  const proximaSemana = new Date(hoy);
-  proximaSemana.setDate(proximaSemana.getDate() + 7);
-  proximaSemana.setHours(23, 59, 59, 999);
+  const hoy = new Date()
+  hoy.setHours(0, 0, 0, 0)
+  const proximaSemana = new Date(hoy)
+  proximaSemana.setDate(proximaSemana.getDate() + 7)
+  proximaSemana.setHours(23, 59, 59, 999)
 
-  const schedules = await prisma.schedule.findMany({
-    where: {
-      date: { gte: hoy, lte: proximaSemana },
-      isCancelled: false,
-      isHoliday: false,
-      maxCapacity: { gt: 1 }, // Solo grupales
-    },
-    include: {
-      activity: true,
-      bookings: { where: { status: 'CONFIRMED' } },
-    },
-    orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
-  });
+  const [schedules, misReservas, historial] = await Promise.all([
+    prisma.schedule.findMany({
+      where: {
+        date: { gte: hoy, lte: proximaSemana },
+        isCancelled: false,
+        isHoliday: false,
+        maxCapacity: { gt: 1 },
+      },
+      include: {
+        activity: true,
+        bookings: { where: { status: 'CONFIRMED' } },
+      },
+      orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
+    }),
+    prisma.booking.findMany({
+      where: {
+        memberId: member.id,
+        status: 'CONFIRMED',
+        schedule: { date: { gte: hoy } },
+      },
+      include: { schedule: { include: { activity: true } } },
+      orderBy: { schedule: { date: 'asc' } },
+    }),
+    // Historial para estadística de asistencia propia
+    prisma.booking.findMany({
+      where: {
+        memberId: member.id,
+        schedule: { date: { lt: hoy } },
+        status: { in: ['COMPLETED', 'NO_SHOW'] },
+      },
+      select: { status: true },
+    }),
+  ])
 
-  // Mis reservas confirmadas (grupales + personales)
-  const misReservas = await prisma.booking.findMany({
-    where: {
-      memberId: member.id,
-      status: 'CONFIRMED',
-      schedule: { date: { gte: hoy } },
-    },
-    include: { schedule: { include: { activity: true } } },
-    orderBy: { schedule: { date: 'asc' } },
-  });
+  const completadas = historial.filter(b => b.status === 'COMPLETED').length
+  const ausencias = historial.filter(b => b.status === 'NO_SHOW').length
+  const totalRelevante = completadas + ausencias
+  const tasaAsistencia = totalRelevante > 0 ? Math.round((completadas / totalRelevante) * 100) : null
 
-  // Agrupar por fecha
-  const porFecha: Record<string, typeof schedules> = {};
+  const porFecha: Record<string, typeof schedules> = {}
   schedules.forEach((s) => {
-    const fecha = s.date.toISOString().split('T')[0];
-    if (!porFecha[fecha]) porFecha[fecha] = [];
-    porFecha[fecha].push(s);
-  });
+    const fecha = s.date.toISOString().split('T')[0]
+    if (!porFecha[fecha]) porFecha[fecha] = []
+    porFecha[fecha].push(s)
+  })
 
   return (
     <div className="space-y-6">
@@ -54,6 +67,33 @@ export default async function ClasesPage() {
         <h2 className="text-2xl font-bold text-white">Clases Grupales</h2>
         <p className="text-zinc-400 mt-1">Reservá tu lugar en las clases del gimnasio</p>
       </div>
+
+      {/* Mi asistencia */}
+      {totalRelevante > 0 && (
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-center">
+            <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center mx-auto mb-2">
+              <TrendingUp size={16} className="text-violet-400" />
+            </div>
+            <p className="text-xl font-bold text-white">{tasaAsistencia}%</p>
+            <p className="text-[10px] text-zinc-500 mt-1">Asistencia</p>
+          </div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-center">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center mx-auto mb-2">
+              <CheckCircle size={16} className="text-emerald-400" />
+            </div>
+            <p className="text-xl font-bold text-white">{completadas}</p>
+            <p className="text-[10px] text-zinc-500 mt-1">Clases hechas</p>
+          </div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-center">
+            <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center mx-auto mb-2">
+              <Users size={16} className="text-red-400" />
+            </div>
+            <p className="text-xl font-bold text-white">{ausencias}</p>
+            <p className="text-[10px] text-zinc-500 mt-1">Ausencias</p>
+          </div>
+        </div>
+      )}
 
       {/* Mis reservas */}
       {misReservas.length > 0 && (
@@ -74,15 +114,16 @@ export default async function ClasesPage() {
                   <div>
                     <p className="text-white font-medium">{r.schedule.activity.name}</p>
                     <p className="text-sm text-zinc-500">
-                      {new Date(r.schedule.date).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                      {new Date(r.schedule.date).toLocaleDateString('es-AR', {
+                        weekday: 'long', day: 'numeric', month: 'long',
+                        timeZone: 'America/Argentina/Buenos_Aires',
+                      })}
                       {' • '}
                       {r.schedule.startTime} - {r.schedule.endTime}
                     </p>
                   </div>
                 </div>
-                <span className="text-xs bg-green-500/10 text-green-400 px-2 py-1 rounded-full">
-                  Confirmada
-                </span>
+                <MisReservaCancelar bookingId={r.id} />
               </div>
             ))}
           </div>
@@ -93,14 +134,17 @@ export default async function ClasesPage() {
       {Object.entries(porFecha).map(([fecha, clases]) => (
         <div key={fecha} className="space-y-3">
           <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
-            {new Date(fecha + 'T00:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
+            {new Date(fecha + 'T00:00:00').toLocaleDateString('es-AR', {
+              weekday: 'long', day: 'numeric', month: 'long',
+              timeZone: 'America/Argentina/Buenos_Aires',
+            })}
           </h3>
-          
+
           <div className="space-y-2">
             {clases.map((clase) => {
-              const disponibles = clase.maxCapacity - clase.bookings.length;
-              const yaReservado = misReservas.some(r => r.scheduleId === clase.id);
-              
+              const disponibles = clase.maxCapacity - clase.bookings.length
+              const miReserva = misReservas.find(r => r.scheduleId === clase.id)
+
               return (
                 <div key={clase.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -127,14 +171,15 @@ export default async function ClasesPage() {
                       </div>
                     </div>
                   </div>
-                  
-                  <ReservarClase 
-                    scheduleId={clase.id} 
-                    disponibles={disponibles} 
-                    yaReservado={yaReservado}
+
+                  <ReservarClase
+                    scheduleId={clase.id}
+                    bookingId={miReserva?.id}
+                    disponibles={disponibles}
+                    yaReservado={!!miReserva}
                   />
                 </div>
-              );
+              )
             })}
           </div>
         </div>
@@ -147,5 +192,5 @@ export default async function ClasesPage() {
         </div>
       )}
     </div>
-  );
+  )
 }
