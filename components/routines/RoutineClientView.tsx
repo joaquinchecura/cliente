@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import {
   startSession, completeSession,
   getSessionProgress, logProgress, deleteProgressLog,
@@ -15,7 +15,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// ── Types (sin cambios) ──────────────────────────────────────────────────
 
 interface SessionLog {
   id: string
@@ -64,14 +64,14 @@ function getStatus(day: RoutineDay): SessionStatus {
 
 export function RoutineClientView({ routine }: { routine: Routine }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
 
-  // Group days by week
   const weeks = Array.from({ length: routine.totalWeeks || 1 }, (_, i) => ({
     weekNumber: i + 1,
     sessions: routine.days.filter(d => d.weekNumber === i + 1),
   }))
 
-  // Default to the week with the first incomplete session
   const defaultWeek =
     weeks.find(w => w.sessions.some(s => getStatus(s) !== "completed"))
       ?.weekNumber ?? 1
@@ -85,8 +85,17 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
 
   const weekSessions = weeks.find(w => w.weekNumber === selectedWeek)?.sessions ?? []
 
-  // ── Open a session ──
-  async function handleOpenSession(day: RoutineDay) {
+  // ── Rehidratar la sesión activa desde la URL al montar (refresh-safe) ──
+  useEffect(() => {
+    const dayId = searchParams.get("day")
+    if (!dayId) return
+    const day = routine.days.find(d => d.id === dayId)
+    if (day) openSession(day, false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ── Abrir una sesión (usada tanto por click como por rehidratación) ──
+  async function openSession(day: RoutineDay, updateUrl = true) {
     setLoading(true)
     try {
       const log = await startSession(routine.id, day.id)
@@ -94,12 +103,14 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
       const progress = await getSessionProgress(day.id)
       setSessionProgress(progress?.progressLogs ?? [])
       setActiveSession(day)
+      if (updateUrl) {
+        router.push(`${pathname}?day=${day.id}`, { scroll: false })
+      }
     } finally {
       setLoading(false)
     }
   }
 
-  // ── Complete a session ──
   async function handleCompleteSession() {
     if (!sessionLogId) return
     setCompleting(true)
@@ -108,6 +119,7 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
       setActiveSession(null)
       setSessionLogId(null)
       setSessionProgress([])
+      router.push(pathname, { scroll: false })
       router.refresh()
     } finally {
       setCompleting(false)
@@ -118,6 +130,7 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
     setActiveSession(null)
     setSessionLogId(null)
     setSessionProgress([])
+    router.push(pathname, { scroll: false })
   }
 
   // ══ SESSION DETAIL VIEW ══════════════════════════════════════════════════
@@ -128,7 +141,6 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
 
     return (
       <div className="space-y-4">
-        {/* Header */}
         <div className="flex items-center gap-3">
           <button
             onClick={handleBack}
@@ -150,7 +162,6 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
           </div>
         </div>
 
-        {/* Progress bar */}
         <div className="h-1.5 bg-muted rounded-full overflow-hidden">
           <div
             className="h-full bg-emerald-500 rounded-full transition-all duration-500"
@@ -158,7 +169,6 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
           />
         </div>
 
-        {/* Exercises */}
         <div className="space-y-3">
           {activeSession.exercises.map(re => {
             const logs = sessionProgress.filter((l: any) => l.exerciseId === re.exerciseId)
@@ -189,7 +199,6 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
           })}
         </div>
 
-        {/* Complete button */}
         <div className="pt-2">
           <Button
             onClick={handleCompleteSession}
@@ -221,7 +230,6 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
   // ══ WEEK GRID VIEW ═══════════════════════════════════════════════════════
   return (
     <div className="space-y-5">
-      {/* Week tabs */}
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide">
         {weeks.map(({ weekNumber, sessions }) => {
           const done  = sessions.filter(s => getStatus(s) === "completed").length
@@ -266,7 +274,6 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
         })}
       </div>
 
-      {/* Session list */}
       <div className="space-y-2">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Semana {selectedWeek} — {weekSessions.length} sesiones
@@ -279,7 +286,7 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
           return (
             <button
               key={session.id}
-              onClick={() => !loading && handleOpenSession(session)}
+              onClick={() => !loading && openSession(session)}
               disabled={loading}
               className={cn(
                 "w-full text-left p-4 rounded-xl border transition-all disabled:opacity-70",
@@ -291,7 +298,6 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
               )}
             >
               <div className="flex items-center gap-3">
-                {/* Status icon */}
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
                   status === "completed"
@@ -309,7 +315,6 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
                   )}
                 </div>
 
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <p className="text-sm font-semibold text-foreground">
@@ -330,7 +335,6 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
                     )}
                   </div>
 
-                  {/* Exercise chips */}
                   <div className="flex flex-wrap gap-1">
                     {session.exercises.slice(0, 3).map((ex, i) => (
                       <span key={i} className="text-[10px] px-2 py-0.5 bg-muted rounded-full text-muted-foreground">
