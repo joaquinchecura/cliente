@@ -33,6 +33,7 @@ interface ProgressTrackerProps {
   rest?: string
   notes?: string
   sessionLogId?: string          // para linkear al SessionLog
+  readOnly?: boolean    
   todayLogs: TodayLog[]
   onLogAdded?: (log: any) => void
   onLogDeleted?: (id: string) => void
@@ -164,6 +165,7 @@ export function ProgressTracker({
   rest,
   notes,
   sessionLogId,
+  readOnly,
   todayLogs,
   onLogAdded,
   onLogDeleted,
@@ -184,6 +186,7 @@ export function ProgressTracker({
     weight: number
     notes?: string
   }) => {
+    if (readOnly) return
     const log = await logProgress({
       routineId,
       exerciseId,
@@ -198,6 +201,7 @@ export function ProgressTracker({
 
   // ── Delete a log ──
   const handleDeleteLog = async (logId: string) => {
+    if (readOnly) return
     await deleteProgressLog(logId)
     onLogDeleted?.(logId)
   }
@@ -238,6 +242,7 @@ export function ProgressTracker({
             targetSets={targetSets}
             targetReps={targetReps}
             targetWeight={targetWeight}
+            readOnly={readOnly}
             existingLogs={todayLogs.map(log => ({
               id: log.id,
               setsCompleted: log.setsCompleted,

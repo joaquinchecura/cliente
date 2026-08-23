@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import {
-  startSession, completeSession,
+  startSession, completeSession, reopenSession,
   getSessionProgress, logProgress, deleteProgressLog,
 } from "@/app/actions/routines"
 import { ProgressTracker } from "./progress-tracker"
@@ -67,10 +67,15 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const weeks = Array.from({ length: routine.totalWeeks || 1 }, (_, i) => ({
-    weekNumber: i + 1,
-    sessions: routine.days.filter(d => d.weekNumber === i + 1),
-  }))
+  const actualWeeks = routine.days.length > 0
+  ? Math.max(...routine.days.map(d => d.weekNumber))
+  : 1
+const totalWeeksDisplay = routine.totalWeeks || actualWeeks
+
+const weeks = Array.from({ length: totalWeeksDisplay }, (_, i) => ({
+  weekNumber: i + 1,
+  sessions: routine.days.filter(d => d.weekNumber === i + 1),
+}))
 
   const defaultWeek =
     weeks.find(w => w.sessions.some(s => getStatus(s) !== "completed"))
@@ -82,6 +87,7 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
   const [sessionProgress, setSessionProgress] = useState<any[]>([])
   const [completing,      setCompleting]      = useState(false)
   const [loading,         setLoading]         = useState(false)
+  const [reopening,       setReopening] = useState(false)
 
   const weekSessions = weeks.find(w => w.weekNumber === selectedWeek)?.sessions ?? []
 
@@ -126,6 +132,18 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
     }
   }
 
+  async function handleReopenSession() {
+    if (!sessionLogId) return
+    if (!confirm("¿Corregir esta sesión? Vas a poder editar las series que ya cargaste.")) return
+    setReopening(true)
+    try {
+      await reopenSession(sessionLogId)
+      router.refresh()
+    } finally {
+      setReopening(false)
+    }
+  }
+
   function handleBack() {
     setActiveSession(null)
     setSessionLogId(null)
@@ -138,9 +156,12 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
     const completedEx = new Set(sessionProgress.map((l: any) => l.exerciseId)).size
     const totalEx = activeSession.exercises.length
     const allDone = completedEx >= totalEx
+    const sessionStatus = getStatus(activeSession)
+    const isReadOnly = sessionStatus === "completed"
 
     return (
       <div className="space-y-4">
+        {/* Header */}
         <div className="flex items-center gap-3">
           <button
             onClick={handleBack}
@@ -162,6 +183,24 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
           </div>
         </div>
 
+        {/* Banner de solo lectura */}
+        {isReadOnly && (
+          <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 flex items-center justify-between gap-3 text-sm text-emerald-500">
+            <div className="flex items-center gap-2 min-w-0">
+              <CheckCircle2 size={16} className="shrink-0" />
+              <span>Sesión completada. Estás viendo el resumen.</span>
+            </div>
+            <button
+              onClick={handleReopenSession}
+              disabled={reopening}
+              className="shrink-0 text-xs font-semibold underline underline-offset-2 hover:no-underline disabled:opacity-50"
+            >
+              {reopening ? "..." : "Corregir"}
+            </button>
+          </div>
+        )}
+
+        {/* Progress bar */}
         <div className="h-1.5 bg-muted rounded-full overflow-hidden">
           <div
             className="h-full bg-emerald-500 rounded-full transition-all duration-500"
@@ -169,6 +208,7 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
           />
         </div>
 
+        {/* Exercises */}
         <div className="space-y-3">
           {activeSession.exercises.map(re => {
             const logs = sessionProgress.filter((l: any) => l.exerciseId === re.exerciseId)
@@ -184,6 +224,7 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
                 rest={re.rest ?? undefined}
                 notes={re.notes ?? undefined}
                 sessionLogId={sessionLogId ?? undefined}
+                readOnly={isReadOnly}
                 todayLogs={logs.map((l: any) => ({
                   id: l.id,
                   setsCompleted: l.setsCompleted,
@@ -199,30 +240,33 @@ export function RoutineClientView({ routine }: { routine: Routine }) {
           })}
         </div>
 
-        <div className="pt-2">
-          <Button
-            onClick={handleCompleteSession}
-            disabled={completing}
-            className={cn(
-              "w-full h-12 text-base font-semibold gap-2 transition-all",
-              allDone
-                ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"
+        {/* Complete button — oculto en solo lectura */}
+        {!isReadOnly && (
+          <div className="pt-2">
+            <Button
+              onClick={handleCompleteSession}
+              disabled={completing}
+              className={cn(
+                "w-full h-12 text-base font-semibold gap-2 transition-all",
+                allDone
+                  ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              )}
+            >
+              <CheckCircle2 size={18} />
+              {completing
+                ? "Guardando..."
+                : allDone
+                ? "Completar sesión ✓"
+                : "Terminar igual"}
+            </Button>
+            {!allDone && (
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                Terminá los {totalEx - completedEx} ejercicios restantes, o guardá el progreso de todas formas.
+              </p>
             )}
-          >
-            <CheckCircle2 size={18} />
-            {completing
-              ? "Guardando..."
-              : allDone
-              ? "Completar sesión ✓"
-              : "Terminar igual"}
-          </Button>
-          {!allDone && (
-            <p className="text-xs text-muted-foreground text-center mt-2">
-              Terminá los {totalEx - completedEx} ejercicios restantes, o guardá el progreso de todas formas.
-            </p>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     )
   }

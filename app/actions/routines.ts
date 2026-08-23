@@ -212,3 +212,22 @@ export async function getSessionProgress(routineDayId: string) {
     },
   })
 }
+
+export async function reopenSession(sessionLogId: string) {
+  const { userId } = await auth()
+  if (!userId) throw new Error('No autenticado')
+
+  const member = await prisma.member.findFirst({ where: { clerkUserId: userId } })
+  if (!member) throw new Error('Miembro no encontrado')
+
+  // Verificar que la sesión pertenezca a este cliente antes de tocarla
+  const session = await prisma.sessionLog.findUnique({ where: { id: sessionLogId } })
+  if (!session || session.memberId !== member.id) {
+    throw new Error('Sesión no encontrada')
+  }
+
+  return prisma.sessionLog.update({
+    where: { id: sessionLogId },
+    data: { completedAt: null },
+  })
+}

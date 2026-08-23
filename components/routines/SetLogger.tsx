@@ -21,6 +21,7 @@ interface SetLoggerProps {
   targetSets: number
   targetReps: string
   targetWeight?: number   // ← nuevo: peso de referencia del entrenador
+  readOnly?: boolean
   existingLogs: {
     id: string
     setsCompleted: number
@@ -36,6 +37,7 @@ export function SetLogger({
   targetSets,
   targetReps,
   targetWeight,
+  readOnly,
   existingLogs,
   onLogSet,
   onDeleteLog,
@@ -221,18 +223,18 @@ export function SetLogger({
               </div>
 
               {/* Action */}
-              {set.completed ? (
-                <button
-                  onClick={() => handleDelete(idx)}
-                  className="p-1 text-muted-foreground/30 hover:text-red-500 transition-colors"
-                >
-                  <Trash2 size={12} />
-                </button>
-              ) : (
-                <Button
-                  size="sm"
-                  onClick={() => handleComplete(idx)}
-                  disabled={saving || set.weight <= 0}
+{readOnly ? null : set.completed ? (
+  <button
+    onClick={() => handleDelete(idx)}
+    className="p-1 text-muted-foreground/30 hover:text-red-500 transition-colors"
+  >
+    <Trash2 size={12} />
+  </button>
+) : (
+  <Button
+    size="sm"
+    onClick={() => handleComplete(idx)}
+    disabled={saving || set.weight <= 0}
                   className={cn(
                     "h-7 px-3 text-[11px] font-bold transition-all",
                     isActive
