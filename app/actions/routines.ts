@@ -25,7 +25,7 @@ export async function getMyRoutines() {
           },
           sessionLogs: {
             where: { memberId: member.id },
-            orderBy: { startedAt: "desc" },
+            orderBy: [{ completedAt: 'desc' }, { startedAt: 'desc' }],
             take: 1,
           },
         },
@@ -176,7 +176,8 @@ export async function startSession(routineId: string, routineDayId: string) {
 
   // Si ya hay una sesión en curso para este día, la devolvemos
   const existing = await prisma.sessionLog.findFirst({
-    where: { routineDayId, memberId: member.id, completedAt: null },
+    where: { routineDayId, memberId: member.id },
+    orderBy: [{ completedAt: 'desc' }, { startedAt: 'desc' }],
   })
   if (existing) return existing
 
@@ -204,9 +205,10 @@ export async function getSessionProgress(routineDayId: string) {
 
   return prisma.sessionLog.findFirst({
     where: { routineDayId, memberId: member.id },
-    orderBy: { startedAt: 'desc' },
+    orderBy: [{ completedAt: 'desc' }, { startedAt: 'desc' }],
     include: {
       progressLogs: {
+        include: { exercise: true },
         orderBy: { date: 'asc' },
       },
     },
