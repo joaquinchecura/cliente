@@ -16,9 +16,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Member not found' }, { status: 404 })
     }
 
-    // El User-Agent acá es el del celular del cliente (quien está generando su QR)
+    // Fallback: parseo del User-Agent (siempre disponible, pero da "K" en vez de modelo real en Android)
     const userAgent = request.headers.get('user-agent')
-    const { deviceBrand, deviceModel, deviceOS } = parseDeviceInfo(userAgent)
+    const fallback = parseDeviceInfo(userAgent)
+
+    // Fuente principal: Client Hints mandados por el navegador (marca/modelo reales, solo Chrome/Android)
+    let clientHints: any = null
+    try {
+      const body = await request.json()
+      clientHints = body?.clientHints || null
+    } catch {
+      // sin body (o no es JSON) — seguimos solo con el fallback
+    }
+
+    const deviceBrand = clientHints?.brand || fallback.deviceBrand
+    const deviceModel = clientHints?.model || fallback.deviceModel
+    const deviceOS = clientHints?.platform && clientHints?.platformVersion
+      ? `${clientHints.platform} ${clientHints.platformVersion}`
+      : fallback.deviceOS
 
     const token = randomBytes(32).toString('hex')
 
