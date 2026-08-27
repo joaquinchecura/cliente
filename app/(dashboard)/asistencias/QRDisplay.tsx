@@ -11,6 +11,30 @@ interface QRDisplayProps {
   status: string;
 }
 
+// Client Hints: pide marca/modelo real al navegador (Chrome/Android los tiene, Safari/iOS no)
+async function getClientHints() {
+  try {
+    const uaData = (navigator as any).userAgentData;
+    if (!uaData?.getHighEntropyValues) return null;
+
+    const hints = await uaData.getHighEntropyValues([
+      "model",
+      "platform",
+      "platformVersion",
+      "brands",
+    ]);
+
+    return {
+      model: hints.model || null,
+      platform: hints.platform || null,
+      platformVersion: hints.platformVersion || null,
+      brand: hints.brands?.find((b: any) => !b.brand.includes("Not"))?.brand || null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export default function QRDisplay({ memberId, memberName, dni, status }: QRDisplayProps) {
   const [token, setToken] = useState<string | null>(null);
   const [attendanceId, setAttendanceId] = useState<string | null>(null);
@@ -31,7 +55,13 @@ export default function QRDisplay({ memberId, memberName, dni, status }: QRDispl
     stopPolling();
     setScanStatus(null);
     try {
-      const res = await fetch("/api/acceso/qr", { method: "POST" });
+      const clientHints = await getClientHints();
+
+      const res = await fetch("/api/acceso/qr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clientHints }),
+      });
       if (res.ok) {
         const data = await res.json();
         setToken(data.token);
@@ -51,7 +81,6 @@ export default function QRDisplay({ memberId, memberName, dni, status }: QRDispl
     return () => stopPolling();
   }, []);
 
-  // Countdown de expiración del QR
   useEffect(() => {
     if (!token || scanStatus !== "PENDING") return;
 
@@ -68,7 +97,6 @@ export default function QRDisplay({ memberId, memberName, dni, status }: QRDispl
     return () => clearInterval(interval);
   }, [token, scanStatus]);
 
-  // Polling: consulta si el admin ya escaneó este QR
   useEffect(() => {
     if (!attendanceId || scanStatus !== "PENDING") return;
 
@@ -101,7 +129,6 @@ export default function QRDisplay({ memberId, memberName, dni, status }: QRDispl
           <div className="relative">
             <QRCodeSVG value={qrValue} size={200} level="H" includeMargin={true} />
 
-            {/* Overlay de confirmación al detectar el escaneo */}
             {scanStatus === "ALLOWED" && (
               <div className="absolute inset-0 bg-green-500/95 rounded-lg flex flex-col items-center justify-center gap-2">
                 <CheckCircle2 className="text-white" size={48} />
