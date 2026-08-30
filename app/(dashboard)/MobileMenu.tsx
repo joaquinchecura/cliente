@@ -14,7 +14,7 @@ const navItems = [
   { href: "/asistencias", label: "Asistencias", icon: QrCode },
   { href: "/rutina", label: "Mi Rutina", icon: Dumbbell },
   { href: "/rutina/historial", label: "Historial de rutina", icon: History },
-  { href: "/clases", label: "Clases", icon: Calendar },
+  { href: "/clases", label: "Clases grupales", icon: Calendar },
   { href: "/personaltrainer", label: "Personal Trainer", icon: UserCircle2 },
   { href: "/calendario", label: "Mi Calendario", icon: CalendarCheck },
   { href: "/progreso", label: "Progreso", icon: TrendingUp },
@@ -31,10 +31,14 @@ export default function MobileMenu() {
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 bg-card border-b border-border z-50 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <span className="text-lg font-bold text-primary-foreground">C</span>
+          <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0">
+            <img
+              src="/icons/android-chrome-192x192.png"
+              alt="Cultiva Fitness"
+              className="w-full h-full object-cover"
+            />
           </div>
-          <h1 className="font-bold text-foreground">Cultiva CLIENTE</h1>
+          <h1 className="font-bold text-foreground">CultivaFitness MIPLAN</h1>
         </div>
         <button 
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -43,7 +47,7 @@ export default function MobileMenu() {
           {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
-
+      
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 bg-background z-40 pt-16">

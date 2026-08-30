@@ -31,12 +31,16 @@ export default function DashboardLayout({
       <aside className="w-64 bg-card border-r border-border hidden md:flex flex-col fixed h-full z-40">
         <div className="p-6 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-              <span className="text-xl font-bold text-primary-foreground">C</span>
+            <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0">
+              <img
+                src="/icons/android-chrome-192x192.png"
+                alt="Cultiva Fitness"
+                className="w-full h-full object-cover"
+              />
             </div>
             <div>
               <h1 className="text-lg font-bold text-foreground leading-tight">Cultiva Fitness</h1>
-              <p className="text-xs text-muted-foreground">CLIENTE</p>
+              <p className="text-xs text-muted-foreground">MIPLAN</p>
             </div>
           </div>
         </div>
