@@ -10,6 +10,7 @@ const navItems = [
   { href: "/", label: "Inicio", icon: Home },
   { href: "/clases", label: "Clases Grupales", icon: Calendar },
   { href: "/personaltrainer", label: "Personal Trainer", icon: UserCircle2 },
+  { href: "/calendario", label: "Mi Calendario", icon: CalendarCheck },
   { href: "/rutina", label: "Mi Rutina", icon: Dumbbell },
   { href: "/rutina/historial", label: "Historial de rutina", icon: History },
   { href: "/progreso", label: "Progreso", icon: TrendingUp },
