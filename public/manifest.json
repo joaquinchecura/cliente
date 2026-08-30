@@ -1,7 +1,7 @@
 {
-    "name": "Cultiva - CLIENTE",
-    "short_name": "Cultiva - CLIENTE",
-    "description": "App para clientes de Cultiva",
+    "name": "Cultiva MIPLAM",
+    "short_name": "Cultiva MIPLAN",
+    "description": "App para clientes Cultiva Fitness",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#f8fafc",

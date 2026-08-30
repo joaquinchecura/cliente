@@ -8,7 +8,7 @@ import UserMenu from "./UserMenu";
 
 const navItems = [
   { href: "/", label: "Inicio", icon: Home },
-  { href: "/clases", label: "Clases", icon: Calendar },
+  { href: "/clases", label: "Clases Grupales", icon: Calendar },
   { href: "/personaltrainer", label: "Personal Trainer", icon: UserCircle2 },
   { href: "/rutina", label: "Mi Rutina", icon: Dumbbell },
   { href: "/rutina/historial", label: "Historial de rutina", icon: History },
