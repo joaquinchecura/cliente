@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { 
   Dumbbell, Calendar, QrCode, TrendingUp, 
   CreditCard, ShieldCheck, Newspaper, User,
-  Clock, AlertCircle, UserCircle2
+  Clock, AlertCircle, UserCircle2, CalendarCheck
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -151,6 +151,12 @@ export default async function DashboardPage() {
     ? `${activeMembership.plan.name} · Vence ${new Date(activeMembership.endDate).toLocaleDateString("es-AR", { day: "numeric", month: "long" })}`
     : "Sin membresía activa";
 
+  // Total de sesiones próximas (grupales + PT) — reutiliza los counts ya calculados arriba
+  const totalUpcoming = classBookingsCount + ptBookingsCount;
+  const calendarSubtitle = totalUpcoming > 0
+    ? `${totalUpcoming} sesión${totalUpcoming > 1 ? "es" : ""} próxima${totalUpcoming > 1 ? "s" : ""}`
+    : "Ver clases y turnos";
+
   return (
     <div className="space-y-5">
       {/* Header */}
@@ -194,37 +200,7 @@ export default async function DashboardPage() {
       {/* ─── Cards principales ─────────────────────────────── */}
       <div className="flex flex-col gap-2.5">
 
-        {/* 1. Mi Rutina */}
-        <ActionCard
-          href="/rutina"
-          icon={Dumbbell}
-          iconColor="text-emerald-400"
-          iconBg="bg-emerald-500/15"
-          title="Mi Rutina"
-          subtitle={routineSubtitle}
-        />
-
-        {/* 2. Mis reservas de clases */}
-        <ActionCard
-          href="/clases"
-          icon={Calendar}
-          iconColor="text-blue-400"
-          iconBg="bg-blue-500/15"
-          title="Mis reservas de clases"
-          subtitle={classBookingSubtitle}
-        />
-
-        {/* 3. Mis reservas de PT */}
-        <ActionCard
-          href="/personaltrainer"
-          icon={UserCircle2}
-          iconColor="text-violet-400"
-          iconBg="bg-violet-500/15"
-          title="Mis reservas de Personal Trainer"
-          subtitle={ptBookingSubtitle}
-        />
-
-        {/* 4. Acceso al Gym (QR) */}
+        {/* 1. Acceso al Gym (QR) — lo más usado, va primero */}
         <ActionCard
           href="/asistencias"
           icon={QrCode}
@@ -234,7 +210,47 @@ export default async function DashboardPage() {
           subtitle={attendanceSubtitle}
         />
 
-        {/* 5. Mi Progreso */}
+        {/* 2. Mi Rutina */}
+        <ActionCard
+          href="/rutina"
+          icon={Dumbbell}
+          iconColor="text-emerald-400"
+          iconBg="bg-emerald-500/15"
+          title="Mi Rutina de entrenamiento"
+          subtitle={routineSubtitle}
+        />
+
+        {/* 3. Mis reservas de clases grupales */}
+        <ActionCard
+          href="/clases"
+          icon={Calendar}
+          iconColor="text-blue-400"
+          iconBg="bg-blue-500/15"
+          title="Mis reservas de clases grupales"
+          subtitle={classBookingSubtitle}
+        />
+
+        {/* 4. Mis reservas de PT */}
+        <ActionCard
+          href="/personaltrainer"
+          icon={UserCircle2}
+          iconColor="text-violet-400"
+          iconBg="bg-violet-500/15"
+          title="Mis reservas de Personal Trainer"
+          subtitle={ptBookingSubtitle}
+        />
+
+        {/* 5. Mi Calendario */}
+        <ActionCard
+          href="/calendario"
+          icon={CalendarCheck}
+          iconColor="text-indigo-400"
+          iconBg="bg-indigo-500/15"
+          title="Mi Calendario"
+          subtitle={calendarSubtitle}
+        />
+
+        {/* 6. Mi Progreso */}
         <ActionCard
           href="/progreso"
           icon={TrendingUp}
@@ -244,7 +260,7 @@ export default async function DashboardPage() {
           subtitle={progressSubtitle}
         />
 
-        {/* 6. Pagos */}
+        {/* 7. Pagos */}
         <ActionCard
           href="/pagos"
           icon={CreditCard}
@@ -254,7 +270,7 @@ export default async function DashboardPage() {
           subtitle={paymentSubtitle}
         />
 
-        {/* 7. Membresía (destacada) */}
+        {/* 8. Membresía (destacada) */}
         <ActionCard
           href="/pagos"
           icon={ShieldCheck}
@@ -266,7 +282,7 @@ export default async function DashboardPage() {
           badge={activeMembership && !isOverdue ? { text: "Activa", color: "text-primary", bg: "bg-primary/20" } : undefined}
         />
 
-        {/* 8. Noticias */}
+        {/* 9. Noticias y novedades */}
         <ActionCard
           href="/noticias"
           icon={Newspaper}
@@ -276,7 +292,7 @@ export default async function DashboardPage() {
           subtitle="Últimas novedades del gym"
         />
 
-        {/* 9. Mi Perfil */}
+        {/* 10. Mi Perfil */}
         <ActionCard
           href="/perfil"
           icon={User}

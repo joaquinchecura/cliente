@@ -8,13 +8,13 @@ import UserMenu from "./UserMenu";
 
 const navItems = [
   { href: "/", label: "Inicio", icon: Home },
+  { href: "/asistencias", label: "Asistencias", icon: QrCode },
+  { href: "/rutina", label: "Mi Rutina", icon: Dumbbell },
+  { href: "/rutina/historial", label: "Historial de rutina", icon: History },
   { href: "/clases", label: "Clases Grupales", icon: Calendar },
   { href: "/personaltrainer", label: "Personal Trainer", icon: UserCircle2 },
   { href: "/calendario", label: "Mi Calendario", icon: CalendarCheck },
-  { href: "/rutina", label: "Mi Rutina", icon: Dumbbell },
-  { href: "/rutina/historial", label: "Historial de rutina", icon: History },
   { href: "/progreso", label: "Progreso", icon: TrendingUp },
-  { href: "/asistencias", label: "Asistencias", icon: QrCode },
   { href: "/pagos", label: "Pagos", icon: CreditCard },
   { href: "/noticias", label: "Noticias", icon: Newspaper },
   { href: "/perfil", label: "Perfil", icon: User },
