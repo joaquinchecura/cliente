@@ -1,7 +1,6 @@
 "use client";
 
 import { SignIn } from "@clerk/nextjs";
-import { Dumbbell } from "lucide-react";
 
 export default function SignInPage() {
   return (
@@ -13,8 +12,12 @@ export default function SignInPage() {
       <div className="w-full max-w-sm relative z-10">
         {/* Logo y branding */}
         <div className="text-center mb-10 space-y-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/15 rounded-2xl ring-1 ring-primary/20 mb-2">
-            <Dumbbell className="w-8 h-8 text-primary" strokeWidth={2} />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl ring-1 ring-primary/20 shadow-lg shadow-primary/10 overflow-hidden mb-2">
+            <img
+              src="/icons/android-chrome-512x512.png"
+              alt="Cultiva Fitness"
+              className="w-full h-full object-cover"
+            />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight">
@@ -28,15 +31,25 @@ export default function SignInPage() {
 
         {/* Card de login */}
         <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/60 p-1 shadow-2xl shadow-black/20">
-          <div className="bg-card rounded-xl p-5">
+          <div className="bg-card rounded-xl p-5 flex justify-center">
             <SignIn
               routing="hash"
               forceRedirectUrl="/"
               signUpForceRedirectUrl="/completar-perfil"
               appearance={{
                 elements: {
+                  // Contenedores raíz — sin esto Clerk puede renderizar
+                  // con un ancho propio que queda descentrado dentro del card
+                  rootBox: "w-full flex justify-center",
+                  cardBox: "w-full shadow-none",
+
                   // Card base
-                  card: "bg-transparent shadow-none p-0",
+                  card: "bg-transparent shadow-none p-0 w-full",
+
+                  // Header interno de Clerk, centrado
+                  header: "text-center",
+                  headerTitle: "text-foreground text-lg font-semibold text-center",
+                  headerSubtitle: "text-muted-foreground text-sm text-center",
 
                   // Formulario
                   formFieldLabel: "text-sm font-medium text-muted-foreground mb-1.5 block",

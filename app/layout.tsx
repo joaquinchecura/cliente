@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Geist } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { esES } from '@clerk/localizations';
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +66,7 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider
+      localization={esES}
       afterSignOutUrl="/sign-in"
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
