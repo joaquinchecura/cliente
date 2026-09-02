@@ -37,7 +37,7 @@ export function ExerciseMedia({ imageUrl, gifUrl, videoUrl, name, className }: E
   if (videoUrl) {
     return (
       <div className={cn("relative overflow-hidden rounded-lg bg-muted group", className)}>
-        <img src={imageUrl || ""} alt={name} className="h-full w-full object-cover" onError={() => setMediaError(true)} />
+        <img src={imageUrl || ""} alt={name} className="h-full w-full object-contain" onError={() => setMediaError(true)} />
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
           <div className="bg-white/90 rounded-full p-2"><Play className="h-5 w-5 text-primary fill-primary" /></div>
         </div>
@@ -47,7 +47,7 @@ export function ExerciseMedia({ imageUrl, gifUrl, videoUrl, name, className }: E
 
   return (
     <div className={cn("overflow-hidden rounded-lg bg-muted", className)}>
-      <img src={imageUrl!} alt={name} className="h-full w-full object-cover" onError={() => setMediaError(true)} />
+      <img src={imageUrl!} alt={name} className="h-full w-full object-contain" onError={() => setMediaError(true)} />
     </div>
   );
 }

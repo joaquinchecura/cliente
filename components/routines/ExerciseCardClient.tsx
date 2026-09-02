@@ -20,6 +20,7 @@ const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string; bo
   TECHNIQUE:  { label: "Técnica",         color: "text-slate-400",   bg: "bg-slate-500/10",   border: "border-slate-500/20" },
   WARMUP:     { label: "Calentamiento",   color: "text-rose-400",    bg: "bg-rose-500/10",    border: "border-rose-500/20" },
   COOLDOWN:   { label: "Vuelta a la calma", color: "text-cyan-400",  bg: "bg-cyan-500/10",    border: "border-cyan-500/20" },
+  REHABILITATION: { label: "Rehabilitación", color: "text-indigo-700", bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
   OTHER:      { label: "Otro",            color: "text-gray-400",    bg: "bg-gray-500/10",    border: "border-gray-500/20" },
 }
 
