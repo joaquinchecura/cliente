@@ -27,27 +27,52 @@ export function ExerciseMedia({ imageUrl, gifUrl, videoUrl, name, className }: E
 
   if (gifUrl) {
     return (
-      <div className={cn("relative overflow-hidden rounded-lg bg-muted", className)} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
-        <img src={isHovered ? gifUrl : (imageUrl || gifUrl)} alt={name} className="h-full w-full object-cover transition-all duration-300" onError={() => setMediaError(true)} />
-        {!isHovered && <div className="absolute bottom-2 right-2"><span className="bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full font-medium">GIF</span></div>}
+      <div 
+        className={cn("relative overflow-hidden rounded-lg bg-muted aspect-[4/3]", className)} 
+        onMouseEnter={() => setIsHovered(true)} 
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <img 
+          src={isHovered ? gifUrl : (imageUrl || gifUrl)} 
+          alt={name} 
+          className="h-full w-full object-cover transition-all duration-300" 
+          onError={() => setMediaError(true)} 
+        />
+        {!isHovered && (
+          <div className="absolute bottom-2 right-2">
+            <span className="bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full font-medium">GIF</span>
+          </div>
+        )}
       </div>
     );
   }
 
   if (videoUrl) {
     return (
-      <div className={cn("relative overflow-hidden rounded-lg bg-muted group", className)}>
-        <img src={imageUrl || ""} alt={name} className="h-full w-full object-contain" onError={() => setMediaError(true)} />
+      <div className={cn("relative overflow-hidden rounded-lg bg-muted group aspect-[4/3]", className)}>
+        <img 
+          src={imageUrl || ""} 
+          alt={name} 
+          className="h-full w-full object-cover" 
+          onError={() => setMediaError(true)} 
+        />
         <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
-          <div className="bg-white/90 rounded-full p-2"><Play className="h-5 w-5 text-primary fill-primary" /></div>
+          <div className="bg-white/90 rounded-full p-2">
+            <Play className="h-5 w-5 text-primary fill-primary" />
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={cn("overflow-hidden rounded-lg bg-muted", className)}>
-      <img src={imageUrl!} alt={name} className="h-full w-full object-contain" onError={() => setMediaError(true)} />
+    <div className={cn("overflow-hidden rounded-lg bg-muted aspect-[4/3]", className)}>
+      <img 
+        src={imageUrl!} 
+        alt={name} 
+        className="h-full w-full object-cover" 
+        onError={() => setMediaError(true)} 
+      />
     </div>
   );
 }
