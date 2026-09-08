@@ -95,6 +95,7 @@ enum ExerciseType {
   TECHNIQUE
   WARMUP
   COOLDOWN
+  REHABILITATION 
   OTHER
 }
 
@@ -411,6 +412,21 @@ model RoutineExercise {
   notes         String?
   
   @@map("routine_exercises")
+}
+
+model RoutineRule {
+  id           String       @id @default(cuid())
+  goal         RoutineGoal
+  exerciseType ExerciseType
+  sets         Int
+  repsMin      Int?         // null si el ejercicio es por tiempo
+  repsMax      Int?
+  durationSec  Int?         // usado en vez de reps para STRETCHING, WARMUP, COOLDOWN, MOBILITY
+  restSeconds  Int
+  updatedAt    DateTime     @updatedAt
+
+  @@unique([goal, exerciseType])
+  @@map("routine_rules")
 }
 
 model SessionLog {
