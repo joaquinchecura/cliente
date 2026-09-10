@@ -64,7 +64,7 @@ export default async function CompletarPerfilPage() {
             <User size={28} className="text-blue-400" />
           </div>
           <h1 className="text-2xl font-bold text-white">Completa tu perfil</h1>
-          <p className="text-sm text-zinc-400">Vinculá tu cuenta con el gimnasio para acceder a tu rutina, progreso y más.</p>
+          <p className="text-sm text-zinc-400">Vinculá tu cuenta para acceder a tu entrenamiento, clases, progreso y más.</p>
         </div>
 
         <form action={vincularCuenta} className="space-y-6">
