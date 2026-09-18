@@ -16,11 +16,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Member not found' }, { status: 404 })
     }
 
-    // Fallback: parseo del User-Agent (siempre disponible, pero da "K" en vez de modelo real en Android)
     const userAgent = request.headers.get('user-agent')
     const fallback = parseDeviceInfo(userAgent)
 
-    // Fuente principal: Client Hints mandados por el navegador (marca/modelo reales, solo Chrome/Android)
     let clientHints: any = null
     try {
       const body = await request.json()
@@ -37,8 +35,6 @@ export async function POST(request: Request) {
 
     const token = randomBytes(32).toString('hex')
 
-    // Invalidar QRs pendientes anteriores del mismo member (no los ALLOWED —
-    // esos ya fueron escaneados y son historial real, no se tocan)
     await prisma.attendance.updateMany({
       where: { memberId: member.id, status: 'PENDING' },
       data: { status: 'DENIED' },
@@ -53,6 +49,7 @@ export async function POST(request: Request) {
         deviceBrand,
         deviceModel,
         deviceOS,
+        organizationId: member.organizationId, // ← clave: hereda la org del member
       },
     })
 
