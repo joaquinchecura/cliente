@@ -4,6 +4,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { User, Phone, MapPin, Calendar, Heart, FileText, AlertCircle } from "lucide-react";
 
 async function vincularCuenta(formData: FormData) {
@@ -16,26 +17,45 @@ async function vincularCuenta(formData: FormData) {
     where: { dni, phone },
   });
 
-  const data = {
-    clerkUserId: clerkId,
-    firstName: formData.get("firstName") as string,
-    lastName: formData.get("lastName") as string,
-    dni,
-    email: formData.get("email") as string,
-    phone,
-    birthDate: new Date(formData.get("birthDate") as string),
-    address: (formData.get("address") as string) || null,
-    city: (formData.get("city") as string) || null,
-    emergencyContactName: (formData.get("emergencyContactName") as string) || null,
-    emergencyContactPhone: (formData.get("emergencyContactPhone") as string) || null,
-    medicalNotes: (formData.get("medicalNotes") as string) || null,
-    internalNotes: (formData.get("internalNotes") as string) || null,
-    status: "PENDING" as const,
-    createdBy: "self-registration",
-  };
-
   if (!member) {
+    // Registro nuevo: necesita una organización válida, la que dejó el link ?org=... en la cookie
+    const cookieStore = await cookies();
+    const orgId = cookieStore.get("pending_org")?.value;
+
+    if (!orgId) {
+      redirect("/registro-invalido");
+    }
+
+    const organization = await prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { status: true },
+    });
+
+    if (!organization || organization.status !== "ACTIVE") {
+      redirect("/registro-invalido");
+    }
+
+    const data = {
+      clerkUserId: clerkId,
+      firstName: formData.get("firstName") as string,
+      lastName: formData.get("lastName") as string,
+      dni,
+      email: formData.get("email") as string,
+      phone,
+      birthDate: new Date(formData.get("birthDate") as string),
+      address: (formData.get("address") as string) || null,
+      city: (formData.get("city") as string) || null,
+      emergencyContactName: (formData.get("emergencyContactName") as string) || null,
+      emergencyContactPhone: (formData.get("emergencyContactPhone") as string) || null,
+      medicalNotes: (formData.get("medicalNotes") as string) || null,
+      internalNotes: (formData.get("internalNotes") as string) || null,
+      status: "PENDING" as const,
+      createdBy: "self-registration",
+      organizationId: orgId,
+    };
+
     await prisma.member.create({ data });
+    cookieStore.delete("pending_org");
   } else if (!member.clerkUserId) {
     await prisma.member.update({ where: { id: member.id }, data: { clerkUserId: clerkId } });
   } else if (member.clerkUserId !== clerkId) {
@@ -45,6 +65,8 @@ async function vincularCuenta(formData: FormData) {
   revalidatePath("/");
   redirect("/");
 }
+
+// ... el resto del componente CompletarPerfilPage queda exactamente igual, sin cambios
 
 export default async function CompletarPerfilPage() {
   const user = await currentUser();
@@ -226,7 +248,7 @@ export default async function CompletarPerfilPage() {
             <AlertCircle size={16} className="text-blue-400 shrink-0 mt-0.5" />
             <p className="text-xs text-blue-300/80 leading-relaxed">
               Al vincular tu cuenta, confirmás que los datos proporcionados son correctos. 
-              Tu entrenador podrá ver esta información para personalizar tu rutina.
+              Tu entrenador podrá ver esta información para personalizar tu entrenamiento.
             </p>
           </div>
 
