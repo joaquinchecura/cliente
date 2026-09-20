@@ -18,7 +18,7 @@ async function vincularCuenta(formData: FormData) {
   });
 
   if (!member) {
-    // Registro nuevo: necesita una organización válida, la que dejó el link ?org=... en la cookie
+    // Registro nuevo — igual que ya lo tenías, sin cambios
     const cookieStore = await cookies();
     const orgId = cookieStore.get("pending_org")?.value;
 
@@ -56,10 +56,40 @@ async function vincularCuenta(formData: FormData) {
 
     await prisma.member.create({ data });
     cookieStore.delete("pending_org");
+  } else if (member.organizationId === null) {
+    // Cliente liberado: puede vincularse a la organización nueva del link
+    const cookieStore = await cookies();
+    const orgId = cookieStore.get("pending_org")?.value;
+
+    if (!orgId) {
+      redirect("/registro-invalido");
+    }
+
+    const organization = await prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { status: true },
+    });
+
+    if (!organization || organization.status !== "ACTIVE") {
+      redirect("/registro-invalido");
+    }
+
+    await prisma.member.update({
+      where: { id: member.id },
+      data: {
+        clerkUserId: clerkId,
+        organizationId: orgId,
+        status: "PENDING",
+      },
+    });
+    cookieStore.delete("pending_org");
   } else if (!member.clerkUserId) {
     await prisma.member.update({ where: { id: member.id }, data: { clerkUserId: clerkId } });
   } else if (member.clerkUserId !== clerkId) {
     await prisma.member.update({ where: { id: member.id }, data: { clerkUserId: clerkId } });
+  } else {
+    // Ya pertenece a otro profesional y ya está vinculado con este mismo clerkUserId
+    // (caso raro, pero cubierto: no hace falta hacer nada)
   }
 
   revalidatePath("/");
