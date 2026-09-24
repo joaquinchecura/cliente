@@ -32,6 +32,8 @@ interface RoutineExercise {
   targetWeight: number | null
   rest: string | null
   notes: string | null
+  blockId: string | null
+  blockLabel: string | null
 }
 
 interface RoutineDay {
@@ -39,6 +41,7 @@ interface RoutineDay {
   sessionNumber: number
   weekNumber: number
   dayOfWeek: number
+  dayName: string | null
   exercises: RoutineExercise[]
   sessionLogs: SessionLog[]
 }
@@ -58,6 +61,22 @@ function getStatus(day: RoutineDay): SessionStatus {
   if (!log) return "pending"
   if (log.completedAt) return "completed"
   return "in_progress"
+}
+
+function groupByBlock(exercises: RoutineExercise[]) {
+  const groups = new Map<string, { label: string; exercises: RoutineExercise[] }>()
+  for (const ex of exercises) {
+    const key = ex.blockId ?? "sin-bloque"
+    if (!groups.has(key)) {
+      groups.set(key, { label: ex.blockLabel ?? "Ejercicios", exercises: [] })
+    }
+    groups.get(key)!.exercises.push(ex)
+  }
+  return [...groups.values()]
+}
+
+function sessionTitle(day: { sessionNumber: number; dayName: string | null }) {
+  return day.dayName ? `Sesión ${day.sessionNumber} — ${day.dayName}` : `Sesión ${day.sessionNumber}`
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -171,7 +190,7 @@ const weeks = Array.from({ length: totalWeeksDisplay }, (_, i) => ({
           </button>
           <div className="flex-1 min-w-0">
             <h2 className="text-lg font-bold text-foreground">
-              Sesión {activeSession.sessionNumber}
+              {sessionTitle(activeSession)}
             </h2>
             <p className="text-xs text-muted-foreground">
               Semana {activeSession.weekNumber} · {totalEx} ejercicios
@@ -208,36 +227,43 @@ const weeks = Array.from({ length: totalWeeksDisplay }, (_, i) => ({
           />
         </div>
 
-        {/* Exercises */}
-        <div className="space-y-3">
-          {activeSession.exercises.map(re => {
-            const logs = sessionProgress.filter((l: any) => l.exerciseId === re.exerciseId)
-            return (
-              <ProgressTracker
-                key={re.id}
-                routineId={routine.id}
-                exerciseId={re.exerciseId}
-                exercise={mapPrismaExercise(re.exercise)}
-                targetSets={re.sets}
-                targetReps={re.reps}
-                targetWeight={re.targetWeight ?? undefined}
-                rest={re.rest ?? undefined}
-                notes={re.notes ?? undefined}
-                sessionLogId={sessionLogId ?? undefined}
-                readOnly={isReadOnly}
-                todayLogs={logs.map((l: any) => ({
-                  id: l.id,
-                  setsCompleted: l.setsCompleted,
-                  repsCompleted: l.repsCompleted,
-                  weightUsed: Number(l.weightUsed),
-                  notes: l.notes,
-                  date: l.date instanceof Date ? l.date.toISOString() : l.date,
-                }))}
-                onLogAdded={(log) => setSessionProgress(prev => [...prev, log])}
-                onLogDeleted={(id) => setSessionProgress(prev => prev.filter((l: any) => l.id !== id))}
-              />
-            )
-          })}
+                {/* Exercises — agrupados por bloque de sesión (entrada en calor, zona media, principal, etc.) */}
+                <div className="space-y-5">
+          {groupByBlock(activeSession.exercises).map((group, i) => (
+            <div key={i} className="space-y-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                {group.label}
+              </p>
+              {group.exercises.map(re => {
+                const logs = sessionProgress.filter((l: any) => l.exerciseId === re.exerciseId)
+                return (
+                  <ProgressTracker
+                    key={re.id}
+                    routineId={routine.id}
+                    exerciseId={re.exerciseId}
+                    exercise={mapPrismaExercise(re.exercise)}
+                    targetSets={re.sets}
+                    targetReps={re.reps}
+                    targetWeight={re.targetWeight ?? undefined}
+                    rest={re.rest ?? undefined}
+                    notes={re.notes ?? undefined}
+                    sessionLogId={sessionLogId ?? undefined}
+                    readOnly={isReadOnly}
+                    todayLogs={logs.map((l: any) => ({
+                      id: l.id,
+                      setsCompleted: l.setsCompleted,
+                      repsCompleted: l.repsCompleted,
+                      weightUsed: Number(l.weightUsed),
+                      notes: l.notes,
+                      date: l.date instanceof Date ? l.date.toISOString() : l.date,
+                    }))}
+                    onLogAdded={(log) => setSessionProgress(prev => [...prev, log])}
+                    onLogDeleted={(id) => setSessionProgress(prev => prev.filter((l: any) => l.id !== id))}
+                  />
+                )
+              })}
+            </div>
+          ))}
         </div>
 
         {/* Complete button — oculto en solo lectura */}
@@ -362,7 +388,7 @@ const weeks = Array.from({ length: totalWeeksDisplay }, (_, i) => ({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <p className="text-sm font-semibold text-foreground">
-                      Sesión {session.sessionNumber}
+                      {sessionTitle(session)}
                     </p>
                     {status === "in_progress" && (
                       <span className="text-[9px] font-bold px-1.5 py-0.5 bg-primary/10 text-primary rounded-full">
