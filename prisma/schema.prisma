@@ -111,6 +111,11 @@ enum ActivityType {
   PERSONAL
 }
 
+enum DurationMode {
+  PER_EXERCISE
+  TOTAL_BLOCK
+}
+
 // ============================================
 // 1. CONFIGURACIÓN DEL GIMNASIO
 // ============================================
@@ -489,13 +494,14 @@ model RoutineDay {
   id            String           @id @default(cuid())
   routineId     String
   routine       Routine          @relation(fields: [routineId], references: [id], onDelete: Cascade)
-  sessionNumber Int              // ← nuevo: número absoluto (1-84)
-  weekNumber    Int              // ← nuevo: semana (1-12)
-  dayOfWeek     Int              // ← nuevo: posición en la semana (1-7)
-  dayName       String           // "Sesión 1", "Sesión 2", etc.
+  sessionNumber Int
+  weekNumber    Int
+  dayOfWeek     Int
+  dayName       String
+  goal          RoutineGoal?     // NUEVO — objetivo específico de este día; null en días viejos (heredan Routine.goal)
   order         Int
   exercises     RoutineExercise[]
-  sessionLogs   SessionLog[]     // ← nuevo
+  sessionLogs   SessionLog[]
   createdAt     DateTime         @default(now())
 
   organizationId String?
@@ -514,11 +520,14 @@ model RoutineExercise {
   exercise      Exercise   @relation(fields: [exerciseId], references: [id])
   sets          Int
   reps          String
-  targetWeight  Float?     // ← nuevo: peso prescripto de referencia
+  targetWeight  Float?
   rest          String?
   order         Int
   notes         String?
-  
+  blockId       String?    // NUEVO — "warmup", "core", "main", "main-station-1"...
+  blockLabel    String?    // NUEVO — "Entrada en calor", "Bloque 1 (estación)"...
+  blockType     String?    // NUEVO — WARMUP | CORE | MAIN | COOLDOWN (String, no enum, para no acoplar schemas)
+
   organizationId String?
   organization   Organization? @relation(fields: [organizationId], references: [id])
 
@@ -537,6 +546,7 @@ model RoutineRule {
   durationSec  Int?         // usado en vez de reps para STRETCHING, WARMUP, COOLDOWN, MOBILITY
   restSeconds  Int
   updatedAt    DateTime     @updatedAt
+  durationMode DurationMode @default(PER_EXERCISE)
 
   @@unique([goal, exerciseType])
   @@map("routine_rules")
