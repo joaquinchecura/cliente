@@ -12,90 +12,133 @@ async function vincularCuenta(formData: FormData) {
   const clerkId = formData.get("clerkId") as string;
   const dni = formData.get("dni") as string;
   const phone = formData.get("phone") as string;
+  const email = formData.get("email") as string;
 
-  const member = await prisma.member.findFirst({
-    where: { dni, phone },
+  const cookieStore = await cookies();
+  const orgId = cookieStore.get("pending_org")?.value;
+
+  if (!orgId) redirect("/registro-invalido");
+
+  // Verificamos que la organización del link sea válida
+  const organization = await prisma.organization.findUnique({
+    where: { id: orgId },
+    select: { status: true },
   });
 
-  if (!member) {
-    // Registro nuevo — igual que ya lo tenías, sin cambios
-    const cookieStore = await cookies();
-    const orgId = cookieStore.get("pending_org")?.value;
+  if (!organization || organization.status !== "ACTIVE") {
+    redirect("/registro-invalido");
+  }
 
-    if (!orgId) {
-      redirect("/registro-invalido");
-    }
+  // 🔍 BUSCAMOS AL ALUMNO:
+  // 1. Si el admin ya lo cargó con este DNI en esta organización (esperando vinculación)
+  // 2. O si el alumno ya se había registrado antes (por email) en cualquier lado
+  const existingMember = await prisma.member.findFirst({
+    where: {
+      OR: [
+        { AND: [{ dni }, { organizationId: orgId }] },
+        { email },
+      ],
+    },
+  });
 
-    const organization = await prisma.organization.findUnique({
-      where: { id: orgId },
-      select: { status: true },
+  if (!existingMember) {
+    // 🆕 REGISTRO NUEVO: El alumno se registra solo, sin que el admin lo haya creado.
+    const newMember = await prisma.member.create({
+      data: {
+        clerkUserId: clerkId,
+        firstName: formData.get("firstName") as string,
+        lastName: formData.get("lastName") as string,
+        dni,
+        email,
+        phone,
+        birthDate: new Date(formData.get("birthDate") as string),
+        address: (formData.get("address") as string) || null,
+        city: (formData.get("city") as string) || null,
+        emergencyContactName: (formData.get("emergencyContactName") as string) || null,
+        emergencyContactPhone: (formData.get("emergencyContactPhone") as string) || null,
+        medicalNotes: (formData.get("medicalNotes") as string) || null,
+        internalNotes: (formData.get("internalNotes") as string) || null,
+        status: "PENDING",
+        createdBy: "self-registration",
+        organizationId: orgId,
+      },
     });
 
-    if (!organization || organization.status !== "ACTIVE") {
-      redirect("/registro-invalido");
-    }
-
-    const data = {
-      clerkUserId: clerkId,
-      firstName: formData.get("firstName") as string,
-      lastName: formData.get("lastName") as string,
-      dni,
-      email: formData.get("email") as string,
-      phone,
-      birthDate: new Date(formData.get("birthDate") as string),
-      address: (formData.get("address") as string) || null,
-      city: (formData.get("city") as string) || null,
-      emergencyContactName: (formData.get("emergencyContactName") as string) || null,
-      emergencyContactPhone: (formData.get("emergencyContactPhone") as string) || null,
-      medicalNotes: (formData.get("medicalNotes") as string) || null,
-      internalNotes: (formData.get("internalNotes") as string) || null,
-      status: "PENDING" as const,
-      createdBy: "self-registration",
-      organizationId: orgId,
-    };
-
-    await prisma.member.create({ data });
-    cookieStore.delete("pending_org");
-  } else if (member.organizationId === null) {
-    // Cliente liberado: puede vincularse a la organización nueva del link
-    const cookieStore = await cookies();
-    const orgId = cookieStore.get("pending_org")?.value;
-
-    if (!orgId) {
-      redirect("/registro-invalido");
-    }
-
-    const organization = await prisma.organization.findUnique({
-      where: { id: orgId },
-      select: { status: true },
+    // 🎁 BONUS: Creamos una membresía de prueba automática de 7 días.
+    // Buscamos cualquier plan activo de la organización. (Si no hay, no crea nada).
+    const trialPlan = await prisma.plan.findFirst({
+      where: { organizationId: orgId, isActive: true },
+      orderBy: { price: "asc" },
     });
 
-    if (!organization || organization.status !== "ACTIVE") {
-      redirect("/registro-invalido");
+    if (trialPlan) {
+      await prisma.membership.create({
+        data: {
+          memberId: newMember.id,
+          planId: trialPlan.id,
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 días
+          status: "ACTIVE",
+          organizationId: orgId,
+        },
+      });
     }
 
+  } else if (!existingMember.organizationId) {
+    // 🔗 CASO ESPECIAL: El alumno estaba "liberado" (no pertenecía a nadie). 
+    // Lo vinculamos a esta nueva organización y creamos su trial.
     await prisma.member.update({
-      where: { id: member.id },
+      where: { id: existingMember.id },
       data: {
         clerkUserId: clerkId,
         organizationId: orgId,
         status: "PENDING",
       },
     });
-    cookieStore.delete("pending_org");
-  } else if (!member.clerkUserId) {
-    await prisma.member.update({ where: { id: member.id }, data: { clerkUserId: clerkId } });
-  } else if (member.clerkUserId !== clerkId) {
-    await prisma.member.update({ where: { id: member.id }, data: { clerkUserId: clerkId } });
+
+    const trialPlan = await prisma.plan.findFirst({
+      where: { organizationId: orgId, isActive: true },
+      orderBy: { price: "asc" },
+    });
+
+    if (trialPlan) {
+      await prisma.membership.create({
+        data: {
+          memberId: existingMember.id,
+          planId: trialPlan.id,
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          status: "ACTIVE",
+          organizationId: orgId,
+        },
+      });
+    }
+
   } else {
-    // Ya pertenece a otro profesional y ya está vinculado con este mismo clerkUserId
-    // (caso raro, pero cubierto: no hace falta hacer nada)
+    // 🎯 CASO HABITUAL: El admin ya lo había creado en MANAGER y el alumno se está vinculando.
+    // Solo actualizamos el clerkUserId y le ponemos status ACTIVE.
+    await prisma.member.update({
+      where: { id: existingMember.id },
+      data: {
+        clerkUserId: clerkId,
+        status: "ACTIVE", // Ya lo había creado el profe, así que está aprobado
+        // Actualizamos los datos personales por si cambió algo
+        phone,
+        address: (formData.get("address") as string) || existingMember.address,
+        city: (formData.get("city") as string) || existingMember.city,
+        emergencyContactName: (formData.get("emergencyContactName") as string) || existingMember.emergencyContactName,
+        emergencyContactPhone: (formData.get("emergencyContactPhone") as string) || existingMember.emergencyContactPhone,
+        medicalNotes: (formData.get("medicalNotes") as string) || existingMember.medicalNotes,
+        internalNotes: (formData.get("internalNotes") as string) || existingMember.internalNotes,
+        birthDate: new Date(formData.get("birthDate") as string),
+      },
+    });
   }
 
+  cookieStore.delete("pending_org");
   revalidatePath("/");
   redirect("/");
 }
-
 // ... el resto del componente CompletarPerfilPage queda exactamente igual, sin cambios
 
 export default async function CompletarPerfilPage() {
