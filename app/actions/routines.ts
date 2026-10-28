@@ -88,6 +88,7 @@ export async function logProgress(data: {
       repsCompleted: data.repsCompleted,
       weightUsed: data.weightUsed,
       notes: data.notes ?? null,
+      organizationId: member.organizationId, // 👈 CRÍTICO para que MANAGER lo vea
     },
   })
 
@@ -165,8 +166,6 @@ export async function getExerciseProgress(exerciseId: string, days: number = 90)
   return logs;
 }
 
-// Agregar al final de app/actions/routines.ts del proyecto CLIENTE
-
 export async function startSession(routineId: string, routineDayId: string) {
   const { userId } = await auth()
   if (!userId) throw new Error('No autenticado')
@@ -174,7 +173,6 @@ export async function startSession(routineId: string, routineDayId: string) {
   const member = await prisma.member.findFirst({ where: { clerkUserId: userId } })
   if (!member) throw new Error('Miembro no encontrado')
 
-  // Si ya hay una sesión en curso para este día, la devolvemos
   const existing = await prisma.sessionLog.findFirst({
     where: { routineDayId, memberId: member.id },
     orderBy: [{ completedAt: 'desc' }, { startedAt: 'desc' }],
@@ -182,7 +180,12 @@ export async function startSession(routineId: string, routineDayId: string) {
   if (existing) return existing
 
   return prisma.sessionLog.create({
-    data: { routineId, routineDayId, memberId: member.id },
+    data: {
+      routineId,
+      routineDayId,
+      memberId: member.id,
+      organizationId: member.organizationId, // 👈 AGREGADO
+    },
   })
 }
 

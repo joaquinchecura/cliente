@@ -120,7 +120,7 @@ export default async function ProgresoPage() {
               <div key={r.id} className="px-4 py-3 flex items-center justify-between hover:bg-zinc-800/50">
                 <div className="flex items-center gap-3">
                   <div className="text-xs text-zinc-500 w-20">
-                    {new Date(r.createdAt).toLocaleDateString('es-AR')}
+                  {new Date(r.createdAt).toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' })}
                   </div>
                   <div className="flex gap-4 text-sm">
                     <span className="text-white font-medium">{Number(r.weight)} kg</span>
