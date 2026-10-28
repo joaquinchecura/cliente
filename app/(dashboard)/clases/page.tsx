@@ -6,11 +6,35 @@ import { Calendar, Clock, Users, MapPin, CheckCircle, Dumbbell, TrendingUp } fro
 import ReservarClase from "./ReservarClase"
 import MisReservaCancelar from "./MisReservaCancelar"
 
+// Helper local para calcular "hoy" en la TZ del gym
+function getTodayInTZ(timezone: string): Date {
+  const now = new Date()
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(now)
+  
+  const year = Number(parts.find(p => p.type === 'year')?.value)
+  const month = Number(parts.find(p => p.type === 'month')?.value)
+  const day = Number(parts.find(p => p.type === 'day')?.value)
+  
+  return new Date(year, month - 1, day, 0, 0, 0, 0)
+}
+
 export default async function ClasesPage() {
   const member = await getCurrentMember()
+  
+  // 👇 Leemos el timezone del gym directamente
+  const config = await prisma.gymConfig.findFirst({
+    where: { organizationId: member.organizationId ?? undefined },
+    select: { timezone: true },
+  })
+  const tz = config?.timezone || 'America/Argentina/Buenos_Aires'
 
-  const hoy = new Date()
-  hoy.setHours(0, 0, 0, 0)
+  // 👇 Calculamos "hoy" en la TZ del gym
+  const hoy = getTodayInTZ(tz)
   const proximaSemana = new Date(hoy)
   proximaSemana.setDate(proximaSemana.getDate() + 7)
   proximaSemana.setHours(23, 59, 59, 999)
@@ -38,7 +62,6 @@ export default async function ClasesPage() {
       include: { schedule: { include: { activity: true } } },
       orderBy: { schedule: { date: 'asc' } },
     }),
-    // Historial para estadística de asistencia propia
     prisma.booking.findMany({
       where: {
         memberId: member.id,
@@ -53,6 +76,16 @@ export default async function ClasesPage() {
   const ausencias = historial.filter(b => b.status === 'NO_SHOW').length
   const totalRelevante = completadas + ausencias
   const tasaAsistencia = totalRelevante > 0 ? Math.round((completadas / totalRelevante) * 100) : null
+
+  // 👇 Formateo de fecha con la TZ del gym
+  const formatFecha = (date: Date) => {
+    return date.toLocaleDateString('es-AR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      timeZone: tz,
+    })
+  }
 
   const porFecha: Record<string, typeof schedules> = {}
   schedules.forEach((s) => {
@@ -114,10 +147,7 @@ export default async function ClasesPage() {
                   <div>
                     <p className="text-white font-medium">{r.schedule.activity.name}</p>
                     <p className="text-sm text-zinc-500">
-                    {new Date(r.schedule.date).toLocaleDateString('es-AR', {
-  weekday: 'long', day: 'numeric', month: 'long',
-  timeZone: 'UTC',
-})}
+                      {formatFecha(r.schedule.date)}
                       {' • '}
                       {r.schedule.startTime} - {r.schedule.endTime}
                     </p>
@@ -134,11 +164,11 @@ export default async function ClasesPage() {
       {Object.entries(porFecha).map(([fecha, clases]) => (
         <div key={fecha} className="space-y-3">
           <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">
-  {new Date(fecha + 'T00:00:00Z').toLocaleDateString('es-AR', {
-    weekday: 'long', day: 'numeric', month: 'long',
-    timeZone: 'UTC',
-  })}
-</h3>
+            {new Date(fecha + 'T12:00:00').toLocaleDateString('es-AR', {
+              weekday: 'long', day: 'numeric', month: 'long',
+              timeZone: tz,
+            })}
+          </h3>
           <div className="space-y-2">
             {clases.map((clase) => {
               const disponibles = clase.maxCapacity - clase.bookings.length
