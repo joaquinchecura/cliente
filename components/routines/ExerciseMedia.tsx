@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Play, Dumbbell } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { optimizeCloudinaryUrl } from "@/lib/cloudinary";
 
 interface ExerciseMediaProps {
   imageUrl?: string | null;
@@ -17,9 +18,6 @@ export function ExerciseMedia({ imageUrl, gifUrl, videoUrl, name, className }: E
   const [mediaError, setMediaError] = useState(false);
   const hasMedia = imageUrl || gifUrl || videoUrl;
 
-  // Contenedor base: relación 4:3 fija (las imágenes son 1200x896).
-  // object-contain asegura que la imagen se vea completa siempre,
-  // sin recortes, aunque queden pequeñas franjas vacías arriba/abajo.
   const baseContainer = "relative w-full aspect-[4/3] overflow-hidden rounded-lg bg-muted";
 
   if (!hasMedia || mediaError) {
@@ -38,7 +36,7 @@ export function ExerciseMedia({ imageUrl, gifUrl, videoUrl, name, className }: E
         onMouseLeave={() => setIsHovered(false)}
       >
         <img
-          src={isHovered ? gifUrl : (imageUrl || gifUrl)}
+          src={optimizeCloudinaryUrl(isHovered ? gifUrl : (imageUrl || gifUrl), 400)}
           alt={name}
           className="h-full w-full object-contain transition-all duration-300"
           onError={() => setMediaError(true)}
@@ -56,7 +54,7 @@ export function ExerciseMedia({ imageUrl, gifUrl, videoUrl, name, className }: E
     return (
       <div className={cn(baseContainer, "group", className)}>
         <img
-          src={imageUrl || ""}
+          src={optimizeCloudinaryUrl(imageUrl, 400) || ""}
           alt={name}
           className="h-full w-full object-contain"
           onError={() => setMediaError(true)}
@@ -73,7 +71,7 @@ export function ExerciseMedia({ imageUrl, gifUrl, videoUrl, name, className }: E
   return (
     <div className={cn(baseContainer, className)}>
       <img
-        src={imageUrl!}
+        src={optimizeCloudinaryUrl(imageUrl, 400)!}
         alt={name}
         className="h-full w-full object-contain"
         onError={() => setMediaError(true)}

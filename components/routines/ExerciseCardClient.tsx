@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { Exercise } from "@/types/exercise"
+import { optimizeCloudinaryUrl } from "@/lib/cloudinary"
 
 const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
   STRENGTH:   { label: "Fuerza",          color: "text-blue-400",    bg: "bg-blue-500/10",    border: "border-blue-500/20" },
@@ -20,7 +21,7 @@ const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string; bo
   TECHNIQUE:  { label: "Técnica",         color: "text-slate-400",   bg: "bg-slate-500/10",   border: "border-slate-500/20" },
   WARMUP:     { label: "Calentamiento",   color: "text-rose-400",    bg: "bg-rose-500/10",    border: "border-rose-500/20" },
   COOLDOWN:   { label: "Vuelta a la calma", color: "text-cyan-400",  bg: "bg-cyan-500/10",    border: "border-cyan-500/20" },
-  REHABILITATION: { label: "Rehabilitación", color: "text-indigo-700", bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
+  REHABILITATION: { label: "Rehabilitación", color: "text-indigo-400", bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
   OTHER:      { label: "Otro",            color: "text-gray-400",    bg: "bg-gray-500/10",    border: "border-gray-500/20" },
 }
 
@@ -28,7 +29,7 @@ interface ExerciseCardClientProps {
   exercise: Exercise
   targetSets: number
   targetReps: string
-  targetWeight?: number   // ← nuevo
+  targetWeight?: number
   rest?: string
   notes?: string
   completedSets: number
@@ -80,14 +81,14 @@ export function ExerciseCardClient({
           >
             {exercise.gifUrl && !mediaError ? (
               <img
-                src={exercise.gifUrl}
+                src={optimizeCloudinaryUrl(exercise.gifUrl, 200)}
                 alt={exercise.name}
                 className="h-full w-full object-cover"
                 onError={() => setMediaError(true)}
               />
             ) : exercise.imageUrl && !mediaError ? (
               <img
-                src={exercise.imageUrl}
+                src={optimizeCloudinaryUrl(exercise.imageUrl, 200)}
                 alt={exercise.name}
                 className="h-full w-full object-cover"
                 onError={() => setMediaError(true)}
@@ -183,7 +184,6 @@ export function ExerciseCardClient({
                       <Clock size={10} /> {rest}
                     </span>
                   )}
-                  {/* Reference weight pill */}
                   {targetWeight && targetWeight > 0 && (
                     <span className="flex items-center gap-0.5 text-primary/70 bg-primary/8 px-1.5 py-0.5 rounded-full text-[9px] font-medium">
                       <Target size={9} />
@@ -231,7 +231,7 @@ export function ExerciseCardClient({
               {showMedia && (
                 <div className="mt-2 aspect-video rounded-xl overflow-hidden bg-muted">
                   {exercise.gifUrl
-                    ? <img src={exercise.gifUrl} alt={exercise.name} className="w-full h-full object-contain" />
+                    ? <img src={optimizeCloudinaryUrl(exercise.gifUrl, 600)} alt={exercise.name} className="w-full h-full object-contain" />
                     : <video src={exercise.videoUrl} controls className="w-full h-full" />
                   }
                 </div>
