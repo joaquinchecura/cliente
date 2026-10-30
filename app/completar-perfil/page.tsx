@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { User, Phone, MapPin, Calendar, Heart, FileText, AlertCircle } from "lucide-react";
+import { sendWelcomeEmail } from '@/lib/email'
 
 async function vincularCuenta(formData: FormData) {
   "use server";
@@ -13,6 +14,7 @@ async function vincularCuenta(formData: FormData) {
   const dni = formData.get("dni") as string;
   const phone = formData.get("phone") as string;
   const email = formData.get("email") as string;
+  const firstName = formData.get("firstName") as string;
 
   const cookieStore = await cookies();
   const orgId = cookieStore.get("pending_org")?.value;
@@ -29,9 +31,7 @@ async function vincularCuenta(formData: FormData) {
     redirect("/registro-invalido");
   }
 
-  // 🔍 BUSCAMOS AL ALUMNO:
-  // 1. Si el admin ya lo cargó con este DNI en esta organización (esperando vinculación)
-  // 2. O si el alumno ya se había registrado antes (por email) en cualquier lado
+  // 🔍 BUSCAMOS AL ALUMNO
   const existingMember = await prisma.member.findFirst({
     where: {
       OR: [
@@ -41,12 +41,14 @@ async function vincularCuenta(formData: FormData) {
     },
   });
 
+  let isNewRegistration = false;
+
   if (!existingMember) {
-    // 🆕 REGISTRO NUEVO: El alumno se registra solo, sin que el admin lo haya creado.
+    // 🆕 REGISTRO NUEVO
     const newMember = await prisma.member.create({
       data: {
         clerkUserId: clerkId,
-        firstName: formData.get("firstName") as string,
+        firstName,
         lastName: formData.get("lastName") as string,
         dni,
         email,
@@ -64,8 +66,6 @@ async function vincularCuenta(formData: FormData) {
       },
     });
 
-    // 🎁 BONUS: Creamos una membresía de prueba automática de 7 días.
-    // Buscamos cualquier plan activo de la organización. (Si no hay, no crea nada).
     const trialPlan = await prisma.plan.findFirst({
       where: { organizationId: orgId, isActive: true },
       orderBy: { price: "asc" },
@@ -77,23 +77,20 @@ async function vincularCuenta(formData: FormData) {
           memberId: newMember.id,
           planId: trialPlan.id,
           startDate: new Date(),
-          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 días
+          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
           status: "ACTIVE",
           organizationId: orgId,
         },
       });
     }
 
+    isNewRegistration = true;
+
   } else if (!existingMember.organizationId) {
-    // 🔗 CASO ESPECIAL: El alumno estaba "liberado" (no pertenecía a nadie). 
-    // Lo vinculamos a esta nueva organización y creamos su trial.
+    // 🔗 CASO ESPECIAL: Alumno liberado
     await prisma.member.update({
       where: { id: existingMember.id },
-      data: {
-        clerkUserId: clerkId,
-        organizationId: orgId,
-        status: "PENDING",
-      },
+      data: { clerkUserId: clerkId, organizationId: orgId, status: "PENDING" },
     });
 
     const trialPlan = await prisma.plan.findFirst({
@@ -114,15 +111,15 @@ async function vincularCuenta(formData: FormData) {
       });
     }
 
+    isNewRegistration = true;
+
   } else {
-    // 🎯 CASO HABITUAL: El admin ya lo había creado en MANAGER y el alumno se está vinculando.
-    // Solo actualizamos el clerkUserId y le ponemos status ACTIVE.
+    // 🎯 CASO HABITUAL: El admin ya lo creó
     await prisma.member.update({
       where: { id: existingMember.id },
       data: {
         clerkUserId: clerkId,
-        status: "ACTIVE", // Ya lo había creado el profe, así que está aprobado
-        // Actualizamos los datos personales por si cambió algo
+        status: "ACTIVE",
         phone,
         address: (formData.get("address") as string) || existingMember.address,
         city: (formData.get("city") as string) || existingMember.city,
@@ -135,11 +132,26 @@ async function vincularCuenta(formData: FormData) {
     });
   }
 
+  // 👇 ENVIAR EMAIL SOLO SI ES UN REGISTRO NUEVO
+  if (isNewRegistration) {
+    const gymConfig = await prisma.gymConfig.findFirst({
+      where: { organizationId: orgId },
+      select: { name: true },
+    });
+
+    // No bloqueamos el redirect si falla el email
+    sendWelcomeEmail({
+      to: email,
+      firstName,
+      gymName: gymConfig?.name || 'Tu gimnasio',
+      miplanUrl: process.env.NEXT_PUBLIC_MIPLAN_URL || 'https://miplan.cultivafitness.app',
+    }).catch(err => console.error('Error enviando email de bienvenida:', err));
+  }
+
   cookieStore.delete("pending_org");
   revalidatePath("/");
   redirect("/");
 }
-// ... el resto del componente CompletarPerfilPage queda exactamente igual, sin cambios
 
 export default async function CompletarPerfilPage() {
   const user = await currentUser();

@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LabelList } from "recharts"
-import { TrendingUp, ChevronDown, BarChart3, Weight, Trophy, Zap, Target } from "lucide-react"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts"
+import { TrendingUp, ChevronDown, BarChart3, Weight, Trophy, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -11,12 +11,15 @@ interface ExerciseProgress {
   exerciseType: string
   date: string
   weightUsed: number
-  targetWeight?: number | null   // ← nuevo: peso prescripto de esa sesión
+  targetWeight?: number | null
   setsCompleted: number
   repsCompleted: string
 }
 
-interface ProgressChartProps { data: ExerciseProgress[]; title?: string }
+interface ProgressChartProps {
+  data: ExerciseProgress[]
+  title?: string
+}
 
 type ChartView = "weight" | "volume" | "sets"
 
@@ -33,7 +36,24 @@ const DARK_COLORS = {
   grid: "#27272a",
   tooltipBg: "#18181b",
   tooltipBorder: "#27272a",
-  target: "#71717a",   // gris neutro para la referencia
+  target: "#71717a",
+}
+
+// Función para acortar nombres largos
+function shortenName(name: string) {
+  const cleanName = name
+    .replace(/Extensión de /i, 'Ext. ')
+    .replace(/Elevación /i, 'Elev. ')
+    .replace(/Press de /i, 'Press ')
+    .replace(/Mancuerna/i, 'Manc.')
+    .replace(/Máquina/i, 'Máq.')
+    .replace(/Inclinado/i, 'Incl.')
+    .replace(/Sentadilla/i, 'Sentad.')
+    .replace(/Hombros/i, 'Homb.')
+    .replace(/Tríceps/i, 'Tríc.')
+    .replace(/Bíceps/i, 'Bíc.')
+  
+  return cleanName.length > 20 ? cleanName.slice(0, 18) + '...' : cleanName
 }
 
 export function ProgressChart({ data, title = "Progreso" }: ProgressChartProps) {
@@ -57,12 +77,12 @@ export function ProgressChart({ data, title = "Progreso" }: ProgressChartProps) 
       (sum, e) => sum + e.weightUsed * (parseInt(e.repsCompleted) || 0) * e.setsCompleted, 0
     )
 
-    // Diferencia contra el peso de referencia más reciente
     const latestTarget = latest.targetWeight ?? null
     const diff = latestTarget != null ? Math.round((latest.weightUsed - latestTarget) * 10) / 10 : null
 
     return {
       name: group.name,
+      shortName: shortenName(group.name),
       type: group.type,
       weight: latest.weightUsed,
       target: latestTarget,
@@ -96,7 +116,7 @@ export function ProgressChart({ data, title = "Progreso" }: ProgressChartProps) 
       </Button>
 
       {isOpen && (
-        <div className="mt-2 bg-card border border-border/60 rounded-xl p-4 space-y-4">
+        <div className="mt-2 bg-gradient-to-br from-zinc-900 to-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-4">
           <div className="flex items-center gap-1">
             {(Object.keys(viewConfig) as ChartView[]).map(v => {
               const Icon = viewConfig[v].icon
@@ -111,7 +131,6 @@ export function ProgressChart({ data, title = "Progreso" }: ProgressChartProps) 
             })}
           </div>
 
-          {/* Leyenda de referencia — solo si hay datos de targetWeight */}
           {view === "weight" && hasTargets && (
             <div className="flex items-center gap-4 text-[10px] text-muted-foreground px-1">
               <span className="flex items-center gap-1.5">
@@ -128,20 +147,27 @@ export function ProgressChart({ data, title = "Progreso" }: ProgressChartProps) 
             </div>
           )}
 
-          <div className="h-56">
+          {/* Gráfico vertical (más legible) */}
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke={DARK_COLORS.grid} opacity={0.3} horizontal={false} />
+              <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={DARK_COLORS.grid} opacity={0.3} vertical={false} />
                 <XAxis
-                  type="number"
+                  dataKey="shortName"
                   tick={{ fontSize: 9, fill: DARK_COLORS.textMuted }}
-                  axisLine={{ stroke: DARK_COLORS.border }}
+                  axisLine={false}
                   tickLine={false}
+                  angle={-45}
+                  textAnchor="end"
+                  interval={0}
+                  height={60}
                 />
                 <YAxis
-                  type="category" dataKey="name"
-                  tick={{ fontSize: 10, fill: DARK_COLORS.text }}
-                  axisLine={false} tickLine={false} width={75}
+                  tick={{ fontSize: 9, fill: DARK_COLORS.textMuted }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={40}
+                  unit={view === "weight" ? "kg" : ""}
                 />
                 <Tooltip
                   cursor={{ fill: "rgba(255,255,255,0.05)" }}
@@ -166,10 +192,7 @@ export function ProgressChart({ data, title = "Progreso" }: ProgressChartProps) 
                               <span style={{ color: DARK_COLORS.textMuted }}>Prescripto:</span>
                               <span className="font-medium text-right" style={{ color: DARK_COLORS.target }}>{d.target} kg</span>
                               <span style={{ color: DARK_COLORS.textMuted }}>Diferencia:</span>
-                              <span
-                                className="font-bold text-right"
-                                style={{ color: d.diff >= 0 ? "#34d399" : "#f87171" }}
-                              >
+                              <span className="font-bold text-right" style={{ color: d.diff >= 0 ? "#34d399" : "#f87171" }}>
                                 {d.diff > 0 ? "+" : ""}{d.diff} kg
                               </span>
                             </>
@@ -187,30 +210,16 @@ export function ProgressChart({ data, title = "Progreso" }: ProgressChartProps) 
                     )
                   }}
                 />
-                <Bar dataKey={view} radius={[0, 4, 4, 0]} maxBarSize={20}>
+                <Bar dataKey={view} radius={[4, 4, 0, 0]} maxBarSize={30}>
                   {chartData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
                 </Bar>
-                {/* Marca de referencia superpuesta — solo en vista de peso */}
-                {view === "weight" && hasTargets && (
-                  <Bar dataKey="target" fill="transparent" barSize={20}>
-                    {chartData.map((entry, index) => (
-                      <Cell
-                        key={`target-${index}`}
-                        stroke={DARK_COLORS.target}
-                        strokeWidth={1.5}
-                        strokeDasharray="3 2"
-                        fill="transparent"
-                      />
-                    ))}
-                  </Bar>
-                )}
               </BarChart>
             </ResponsiveContainer>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {chartData.slice(0, 6).map(d => (
-              <div key={d.name} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+              <div key={d.name} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50 border border-border/40">
                 <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
                 <div className="min-w-0">
                   <p className="text-[10px] font-medium truncate" style={{ color: DARK_COLORS.text }}>{d.name}</p>

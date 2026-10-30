@@ -6,7 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { 
   Dumbbell, Calendar, QrCode, TrendingUp, 
   CreditCard, ShieldCheck, Newspaper, User,
-  Clock, AlertCircle, UserCircle2, CalendarCheck
+  Clock, AlertCircle, UserCircle2, CalendarCheck,
+  ArrowRight, Flame, Target
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -82,9 +83,47 @@ function ActionCard({ href, icon: Icon, iconColor, iconBg, title, subtitle, badg
   );
 }
 
+// ─── Mini-card para el Resumen de Hoy ────────────────────────────
+function SummaryCard({
+  icon: Icon,
+  iconColor,
+  iconBg,
+  label,
+  value,
+  sublabel,
+  href,
+}: {
+  icon: React.ElementType;
+  iconColor: string;
+  iconBg: string;
+  label: string;
+  value: string;
+  sublabel?: string;
+  href: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="bg-card border border-border rounded-xl p-3 hover:border-border/80 transition-colors group"
+    >
+      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center mb-2", iconBg)}>
+        <Icon size={16} className={iconColor} />
+      </div>
+      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">{label}</p>
+      <p className="text-sm font-bold text-foreground mt-0.5 truncate">{value}</p>
+      {sublabel && <p className="text-[10px] text-muted-foreground truncate mt-0.5">{sublabel}</p>}
+    </Link>
+  );
+}
+
 // ─── Page principal ────────────────────────────────────────────
 export default async function DashboardPage() {
   const member = await getCurrentMember();
+
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const endOfDay = new Date(startOfDay);
+  endOfDay.setDate(endOfDay.getDate() + 1);
 
   const [
     routinesCount,
@@ -93,6 +132,8 @@ export default async function DashboardPage() {
     attendancesCount,
     paymentsCount,
     lastComp,
+    todayClass,
+    todayPT,
   ] = await Promise.all([
     prisma.routine.count({ where: { memberId: member.id, isActive: true } }),
     prisma.booking.count({
@@ -106,6 +147,32 @@ export default async function DashboardPage() {
     prisma.bodyComposition.findFirst({
       where: { memberId: member.id },
       orderBy: { createdAt: "desc" },
+    }),
+    // Próxima clase grupal hoy
+    prisma.booking.findFirst({
+      where: {
+        memberId: member.id,
+        status: "CONFIRMED",
+        schedule: {
+          date: { gte: startOfDay, lt: endOfDay },
+          maxCapacity: { gt: 1 },
+        },
+      },
+      include: { schedule: { include: { activity: true } } },
+      orderBy: { schedule: { startTime: "asc" } },
+    }),
+    // Próxima sesión PT hoy
+    prisma.booking.findFirst({
+      where: {
+        memberId: member.id,
+        status: "CONFIRMED",
+        schedule: {
+          date: { gte: startOfDay, lt: endOfDay },
+          maxCapacity: 1,
+        },
+      },
+      include: { schedule: { include: { activity: true } } },
+      orderBy: { schedule: { startTime: "asc" } },
     }),
   ]);
 
@@ -144,21 +211,40 @@ export default async function DashboardPage() {
     : "Sin registros · Empezá hoy";
 
   const paymentSubtitle = paymentsCount > 0
-    ? `${paymentsCount} pago${paymentsCount > 1 ? "s" : ""} realizado${paymentsCount > 1 ? "s" : ""} · Ver historial`
+    ? `${paymentsCount} pago${paymentsCount > 1 ? "s" : ""} realizado${paymentsCount > 1 ? "s" : ""}`
     : "Ver historial de pagos";
 
   const membershipSubtitle = activeMembership
     ? `${activeMembership.plan.name} · Vence ${new Date(activeMembership.endDate).toLocaleDateString("es-AR", { day: "numeric", month: "long" })}`
     : "Sin membresía activa";
 
-  // Total de sesiones próximas (grupales + PT) — reutiliza los counts ya calculados arriba
   const totalUpcoming = classBookingsCount + ptBookingsCount;
   const calendarSubtitle = totalUpcoming > 0
     ? `${totalUpcoming} sesión${totalUpcoming > 1 ? "es" : ""} próxima${totalUpcoming > 1 ? "s" : ""}`
     : "Ver clases y turnos";
 
+  // Resumen de hoy
+  const todayClassLabel = todayClass
+    ? todayClass.schedule.activity.name
+    : "Sin clases";
+  const todayClassSub = todayClass
+    ? `${todayClass.schedule.startTime.slice(0, 5)} hs`
+    : undefined;
+
+  const todayPTLabel = todayPT
+    ? todayPT.schedule.activity.name
+    : "Sin sesiones";
+  const todayPTSub = todayPT
+    ? `${todayPT.schedule.startTime.slice(0, 5)} hs`
+    : undefined;
+
+  const routineTodayLabel = routinesCount > 0 ? "Lista" : "Sin asignar";
+  const routineTodaySub = routinesCount > 0
+    ? "Entrenamiento activo"
+    : "Hablá con tu profe";
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Header */}
       <div>
         <h2 className="text-2xl md:text-3xl font-extrabold text-foreground">
@@ -197,18 +283,68 @@ export default async function DashboardPage() {
         </div>
       )}
 
+      {/* ─── Resumen de hoy ─────────────────────────────────── */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Hoy
+          </h3>
+          <span className="text-[10px] text-muted-foreground">
+            {new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
+          </span>
+        </div>
+        <div className="grid grid-cols-3 gap-2.5">
+          <SummaryCard
+            icon={Flame}
+            iconColor="text-orange-400"
+            iconBg="bg-orange-500/15"
+            label="Clases"
+            value={todayClassLabel}
+            sublabel={todayClassSub}
+            href="/clases"
+          />
+          <SummaryCard
+            icon={UserCircle2}
+            iconColor="text-violet-400"
+            iconBg="bg-violet-500/15"
+            label="PT"
+            value={todayPTLabel}
+            sublabel={todayPTSub}
+            href="/personaltrainer"
+          />
+          <SummaryCard
+            icon={Target}
+            iconColor="text-emerald-400"
+            iconBg="bg-emerald-500/15"
+            label="Rutina"
+            value={routineTodayLabel}
+            sublabel={routineTodaySub}
+            href="/rutina"
+          />
+        </div>
+      </div>
+
       {/* ─── Cards principales ─────────────────────────────── */}
       <div className="flex flex-col gap-2.5">
-
-        {/* 1. Acceso al Gym (QR) — lo más usado, va primero */}
-        <ActionCard
+        {/* 1. Acceso al Gym (QR) — destacado */}
+        <Link
           href="/asistencias"
-          icon={QrCode}
-          iconColor="text-purple-400"
-          iconBg="bg-purple-500/15"
-          title="Acceso al Gym"
-          subtitle={attendanceSubtitle}
-        />
+          className="relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 transition-all duration-200 group"
+        >
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center shrink-0 backdrop-blur-sm">
+              <QrCode size={28} className="text-white" strokeWidth={2.2} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-bold text-lg">Acceso al Gym</p>
+              <p className="text-white/80 text-xs mt-0.5 truncate">{attendanceSubtitle}</p>
+            </div>
+            <ArrowRight size={20} className="text-white/80 group-hover:translate-x-1 transition-transform" />
+          </div>
+          {/* Decoración */}
+          <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
+          <div className="absolute -right-4 -bottom-12 w-24 h-24 rounded-full bg-white/5 blur-xl" />
+        </Link>
 
         {/* 2. Mi Rutina */}
         <ActionCard
@@ -226,7 +362,7 @@ export default async function DashboardPage() {
           icon={Calendar}
           iconColor="text-blue-400"
           iconBg="bg-blue-500/15"
-          title="Mis reservas de clases grupales"
+          title="Clases grupales"
           subtitle={classBookingSubtitle}
         />
 
@@ -236,7 +372,7 @@ export default async function DashboardPage() {
           icon={UserCircle2}
           iconColor="text-violet-400"
           iconBg="bg-violet-500/15"
-          title="Mis reservas de Personal Trainer"
+          title="Personal Trainer"
           subtitle={ptBookingSubtitle}
         />
 
@@ -301,7 +437,6 @@ export default async function DashboardPage() {
           title="Mi Perfil"
           subtitle="Editar datos personales"
         />
-
       </div>
     </div>
   );
