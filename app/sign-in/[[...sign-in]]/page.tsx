@@ -15,7 +15,7 @@ export default function SignInPage() {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-zinc-900 ring-1 ring-zinc-800 shadow-2xl shadow-black/20 overflow-hidden mb-2">
             {/* IMPORTANTE: Asegurate que esta imagen exista en tu public/ */}
             <img
-              src="/miplan/logo-clean.png" 
+              src="/brand/logo-clean.png" 
               alt="MIPLAN"
               className="w-14 h-14 object-contain"
             />
