@@ -1,7 +1,7 @@
 "use client";
 
 import { SignUp } from "@clerk/nextjs";
-import { Dumbbell } from "lucide-react";
+import Image from "next/image";
 
 export default function SignUpPage() {
   return (
@@ -12,9 +12,16 @@ export default function SignUpPage() {
 
       <div className="w-full max-w-sm relative z-10">
         {/* Logo y branding */}
-        <div className="text-center mb-10 space-y-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/15 rounded-2xl ring-1 ring-primary/20 mb-2">
-            <Dumbbell className="w-8 h-8 text-primary" strokeWidth={2} />
+        <div className="text-center mb-8 space-y-4">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-card ring-1 ring-border shadow-2xl shadow-black/20 overflow-hidden mb-2">
+            <Image
+              src="/brand/logo-clean.png"
+              alt="MIPLAN"
+              width={64}
+              height={64}
+              className="w-14 h-14 object-contain"
+              priority
+            />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight">
@@ -33,49 +40,6 @@ export default function SignUpPage() {
               routing="hash"
               forceRedirectUrl="/completar-perfil"
               signInForceRedirectUrl="/"
-              appearance={{
-                elements: {
-                  // Card base
-                  card: "bg-transparent shadow-none p-0",
-
-                  // Formulario
-                  formFieldLabel: "text-sm font-medium text-muted-foreground mb-1.5 block",
-                  formFieldInput: 
-                    "w-full h-10 px-3 rounded-lg bg-muted/50 border border-border/60 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all",
-                  formFieldErrorText: "text-xs text-destructive mt-1",
-                  formFieldSuccessText: "text-xs text-emerald-400 mt-1",
-
-                  // Botón primario
-                  formButtonPrimary: 
-                    "w-full h-10 mt-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98]",
-
-                  // Social buttons
-                  socialButtonsBlockButton: 
-                    "w-full h-10 bg-muted/50 border border-border/60 rounded-lg text-foreground hover:bg-muted transition-all duration-200 flex items-center justify-center gap-2",
-                  socialButtonsBlockButtonText: "text-sm font-medium",
-                  socialButtonsBlockButtonArrow: "hidden",
-
-                  // Divider
-                  dividerLine: "bg-border/60",
-                  dividerText: "text-xs text-muted-foreground",
-
-                  // Footer
-                  footer: "mt-4 pt-4 border-t border-border/40",
-                  footerActionText: "text-sm text-muted-foreground",
-                  footerActionLink: 
-                    "text-sm font-semibold text-primary hover:text-primary/80 transition-colors",
-
-                  // Otros
-                  identityPreview: "bg-muted/50 border-border/60 rounded-lg p-3 text-sm text-foreground",
-                  identityPreviewText: "text-foreground",
-                  identityPreviewEditButton: "text-primary hover:text-primary/80",
-                  formResendCodeLink: "text-primary hover:text-primary/80 text-sm",
-                  otpCodeFieldInput: "bg-muted/50 border-border/60 rounded-lg text-foreground",
-                  passwordFieldInput: "w-full h-10 px-3 rounded-lg bg-muted/50 border border-border/60 text-foreground",
-                  passwordFieldHintText: "text-xs text-muted-foreground",
-                  formFieldWarningText: "text-xs text-amber-400",
-                },
-              }}
             />
           </div>
         </div>

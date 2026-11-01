@@ -4,6 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { esES } from '@clerk/localizations';
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { clerkAppearance } from "@/lib/clerk-appearance";
 
 const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
 const inter = Inter({ subsets: ["latin"] });
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent", // Mejor integración con fondos oscuros
     title: "MIPLAN",
   },
   other: {
@@ -40,8 +41,6 @@ export const viewport: Viewport = {
   themeColor: "#F6FDF7",
 };
 
-// Next.js Metadata API no tiene un campo dedicado para apple-touch-startup-image
-// (splash screens de iOS), así que van como <link> manuales acá.
 const splashScreens = [
   { size: "640-1136", media: "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" },
   { size: "750-1334", media: "(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" },
@@ -70,6 +69,7 @@ export default function RootLayout({
       afterSignOutUrl="/sign-in"
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
+      appearance={clerkAppearance} // <-- APLICADO GLOBALMENTE
     >
       <html lang="es" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
         <head>

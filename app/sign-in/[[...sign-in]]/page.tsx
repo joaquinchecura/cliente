@@ -4,99 +4,71 @@ import { SignIn } from "@clerk/nextjs";
 
 export default function SignInPage() {
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Fondo decorativo */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background" />
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-green-500/10 via-zinc-950 to-zinc-950" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-green-500/30 to-transparent" />
 
       <div className="w-full max-w-sm relative z-10">
         {/* Logo y branding */}
-        <div className="text-center mb-10 space-y-4">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl ring-1 ring-primary/20 shadow-lg shadow-primary/10 overflow-hidden mb-2">
+        <div className="text-center mb-8 space-y-4">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-zinc-900 ring-1 ring-zinc-800 shadow-2xl shadow-black/20 overflow-hidden mb-2">
+            {/* IMPORTANTE: Asegurate que esta imagen exista en tu public/ */}
             <img
-              src="/icons/android-chrome-512x512.png"
-              alt="Cultiva Fitness"
-              className="w-full h-full object-cover"
+              src="/miplan/logo-clean.png" 
+              alt="MIPLAN"
+              className="w-14 h-14 object-contain"
             />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tight">
+            <h1 className="text-2xl font-bold text-white tracking-tight">
               Cultiva Fitness MIPLAN
             </h1>
-            <p className="text-sm text-muted-foreground mt-1.5">
+            <p className="text-sm text-zinc-400 mt-1.5">
               Accedé a tu App y seguí tu progreso
             </p>
           </div>
         </div>
 
-        {/* Card de login */}
-        <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/60 p-1 shadow-2xl shadow-black/20">
-          <div className="bg-card rounded-xl p-5 flex justify-center">
-            <SignIn
-              routing="hash"
-              forceRedirectUrl="/"
-              signUpForceRedirectUrl="/completar-perfil"
-              appearance={{
-                elements: {
-                  // Contenedores raíz — sin esto Clerk puede renderizar
-                  // con un ancho propio que queda descentrado dentro del card
-                  rootBox: "w-full flex justify-center",
-                  cardBox: "w-full shadow-none",
-
-                  // Card base
-                  card: "bg-transparent shadow-none p-0 w-full",
-
-                  // Header interno de Clerk, centrado
-                  header: "text-center",
-                  headerTitle: "text-foreground text-lg font-semibold text-center",
-                  headerSubtitle: "text-muted-foreground text-sm text-center",
-
-                  // Formulario
-                  formFieldLabel: "text-sm font-medium text-muted-foreground mb-1.5 block",
-                  formFieldInput: 
-                    "w-full h-10 px-3 rounded-lg bg-muted/50 border border-border/60 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all",
-                  formFieldErrorText: "text-xs text-destructive mt-1",
-                  formFieldSuccessText: "text-xs text-emerald-400 mt-1",
-
-                  // Botón primario
-                  formButtonPrimary: 
-                    "w-full h-10 mt-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-primary/20 hover:shadow-primary/30 active:scale-[0.98]",
-
-                  // Social buttons
-                  socialButtonsBlockButton: 
-                    "w-full h-10 bg-muted/50 border border-border/60 rounded-lg text-foreground hover:bg-muted transition-all duration-200 flex items-center justify-center gap-2",
-                  socialButtonsBlockButtonText: "text-sm font-medium",
-                  socialButtonsBlockButtonArrow: "hidden",
-
-                  // Divider
-                  dividerLine: "bg-border/60",
-                  dividerText: "text-xs text-muted-foreground",
-
-                  // Footer
-                  footer: "mt-4 pt-4 border-t border-border/40",
-                  footerActionText: "text-sm text-muted-foreground",
-                  footerActionLink: 
-                    "text-sm font-semibold text-primary hover:text-primary/80 transition-colors",
-
-                  // Otros
-                  identityPreview: "bg-muted/50 border-border/60 rounded-lg p-3 text-sm text-foreground",
-                  identityPreviewText: "text-foreground",
-                  identityPreviewEditButton: "text-primary hover:text-primary/80",
-                  formResendCodeLink: "text-primary hover:text-primary/80 text-sm",
-                  otpCodeFieldInput: "bg-muted/50 border-border/60 rounded-lg text-foreground",
-
-                  // Password
-                  passwordFieldInput: "w-full h-10 px-3 rounded-lg bg-muted/50 border border-border/60 text-foreground",
-                  passwordFieldHintText: "text-xs text-muted-foreground",
-                  formFieldWarningText: "text-xs text-amber-400",
-                },
-              }}
-            />
-          </div>
+        {/* Tarjeta de login */}
+        <div className="w-full">
+          <SignIn
+            routing="hash"
+            forceRedirectUrl="/"
+            signUpForceRedirectUrl="/completar-perfil"
+            appearance={{
+              variables: {
+                colorPrimary: "#22c55e",
+                colorBackground: "#18181b", 
+                borderRadius: "0.75rem",
+              },
+              elements: {
+                // Contenedor principal
+                card: "!bg-zinc-900 !border !border-zinc-800 !shadow-2xl !rounded-2xl !p-6",
+                
+                // Textos (Forzados a blanco con !)
+                headerTitle: "!text-white text-lg font-semibold text-center",
+                headerSubtitle: "!text-zinc-400 text-sm text-center",
+                formFieldLabel: "!text-zinc-300 text-sm font-medium mb-1.5 block",
+                dividerText: "!text-zinc-500 text-xs",
+                footerActionText: "!text-zinc-400 text-sm",
+                footerActionLink: "!text-green-500 hover:!text-green-400 text-sm font-semibold transition-colors",
+                
+                // Inputs
+                formFieldInput: "!bg-zinc-950 !border-zinc-800 !text-white placeholder:!text-zinc-500 focus:!ring-green-500/50 focus:!border-green-500/50 h-10 rounded-lg px-3 transition-all",
+                
+                // Botones sociales
+                socialButtonsBlockButton: "!bg-zinc-800 !border-zinc-700 !text-white hover:!bg-zinc-700 h-10 rounded-lg transition-all",
+                socialButtonsBlockButtonText: "!text-zinc-300 font-medium",
+                
+                // Botón principal
+                formButtonPrimary: "!bg-green-600 hover:!bg-green-500 !text-white font-semibold h-10 rounded-lg shadow-lg shadow-green-500/20 transition-all active:scale-[0.98] mt-4",
+              }
+            }}
+          />
         </div>
 
-        {/* Footer */}
-        <p className="text-center text-xs text-muted-foreground/60 mt-6">
+        <p className="text-center text-xs text-zinc-500 mt-6">
           Al iniciar sesión, aceptás nuestros términos y condiciones
         </p>
       </div>
