@@ -4,16 +4,12 @@ import { redirect } from "next/navigation";
 
 export async function getCurrentMember() {
   const user = await currentUser();
-  
-  // Si no hay usuario de Clerk, el middleware ya debería haber redirigido
-  // Pero por si acaso, no redirigimos acá, dejamos que falle o manejemos
-  if (!user) {
-    throw new Error("No autenticado");
-  }
+  if (!user) redirect("/sign-in");
 
   const member = await prisma.member.findUnique({
     where: { clerkUserId: user.id },
     include: {
+      organization: { select: { status: true } },
       memberships: {
         where: { status: "ACTIVE" },
         include: { plan: true },
@@ -24,8 +20,11 @@ export async function getCurrentMember() {
   });
 
   // Si no existe el member en la DB, redirigir a completar perfil
-  if (!member) {
-    redirect("/completar-perfil");
+  if (!member) redirect("/completar-perfil");
+
+  // Sin gimnasio asignado, o gimnasio no habilitado
+  if (!member.organizationId || member.organization?.status !== "ACTIVE") {
+    redirect("/cuenta-suspendida");
   }
 
   return member;

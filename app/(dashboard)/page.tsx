@@ -3,42 +3,15 @@ export const dynamic = 'force-dynamic';
 
 import { getCurrentMember } from "@/lib/member";
 import { prisma } from "@/lib/prisma";
-import { 
-  Dumbbell, Calendar, QrCode, TrendingUp, 
+import { toZonedTime } from "date-fns-tz";
+import {
+  Dumbbell, Calendar, QrCode, TrendingUp,
   CreditCard, ShieldCheck, Newspaper, User,
   Clock, AlertCircle, UserCircle2, CalendarCheck,
   ArrowRight, Flame, Target
 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-
-// ─── Componente server para noticias ─────────────────────────────
-async function NoticiasPreview() {
-  const news = await prisma.news.findMany({
-    where: { isActive: true },
-    orderBy: { createdAt: 'desc' },
-    take: 3,
-  });
-
-  if (news.length === 0) {
-    return <p className="text-sm text-muted-foreground">No hay novedades</p>;
-  }
-
-  return (
-    <div className="space-y-3">
-      {news.map((item) => (
-        <Link
-          key={item.id}
-          href="/noticias"
-          className="block p-3 bg-muted/40 rounded-lg hover:bg-muted/60 transition-colors"
-        >
-          <p className="text-sm font-medium text-foreground line-clamp-1">{item.title}</p>
-          <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{item.content}</p>
-        </Link>
-      ))}
-    </div>
-  );
-}
 
 // ─── Card horizontal reutilizable ────────────────────────────────
 interface ActionCardProps {
@@ -120,10 +93,22 @@ function SummaryCard({
 export default async function DashboardPage() {
   const member = await getCurrentMember();
 
-  const now = new Date();
-  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  // Zona horaria del gimnasio (el servidor de Vercel corre en UTC)
+  const gymConfig = await prisma.gymConfig.findFirst({
+    where: { organizationId: member.organizationId },
+    select: { timezone: true },
+  });
+  const TZ = gymConfig?.timezone || "America/Argentina/Buenos_Aires";
+
+  // "Hoy" según la hora local del gimnasio.
+  // schedule.date es @db.Date (medianoche UTC), así que se compara contra
+  // la medianoche UTC del día local.
+  const zonedNow = toZonedTime(new Date(), TZ);
+  const startOfDay = new Date(
+    Date.UTC(zonedNow.getFullYear(), zonedNow.getMonth(), zonedNow.getDate())
+  );
   const endOfDay = new Date(startOfDay);
-  endOfDay.setDate(endOfDay.getDate() + 1);
+  endOfDay.setUTCDate(endOfDay.getUTCDate() + 1);
 
   const [
     routinesCount,
@@ -136,11 +121,20 @@ export default async function DashboardPage() {
     todayPT,
   ] = await Promise.all([
     prisma.routine.count({ where: { memberId: member.id, isActive: true } }),
+    // Solo reservas de hoy en adelante
     prisma.booking.count({
-      where: { memberId: member.id, status: "CONFIRMED", schedule: { maxCapacity: { gt: 1 } } },
+      where: {
+        memberId: member.id,
+        status: "CONFIRMED",
+        schedule: { date: { gte: startOfDay }, maxCapacity: { gt: 1 } },
+      },
     }),
     prisma.booking.count({
-      where: { memberId: member.id, status: "CONFIRMED", schedule: { maxCapacity: 1 } },
+      where: {
+        memberId: member.id,
+        status: "CONFIRMED",
+        schedule: { date: { gte: startOfDay }, maxCapacity: 1 },
+      },
     }),
     prisma.attendance.count({ where: { memberId: member.id, status: "ALLOWED" } }),
     prisma.payment.count({ where: { memberId: member.id, status: "COMPLETED" } }),
@@ -196,7 +190,7 @@ export default async function DashboardPage() {
 
   const classBookingSubtitle = classBookingsCount > 0
     ? `${classBookingsCount} reserva${classBookingsCount > 1 ? "s" : ""} confirmada${classBookingsCount > 1 ? "s" : ""}`
-    : "Sin reservas esta semana";
+    : "Sin reservas próximas";
 
   const ptBookingSubtitle = ptBookingsCount > 0
     ? `${ptBookingsCount} sesión${ptBookingsCount > 1 ? "es" : ""} confirmada${ptBookingsCount > 1 ? "s" : ""}`
@@ -215,7 +209,7 @@ export default async function DashboardPage() {
     : "Ver historial de pagos";
 
   const membershipSubtitle = activeMembership
-    ? `${activeMembership.plan.name} · Vence ${new Date(activeMembership.endDate).toLocaleDateString("es-AR", { day: "numeric", month: "long" })}`
+    ? `${activeMembership.plan.name} · Vence ${new Date(activeMembership.endDate).toLocaleDateString("es-AR", { day: "numeric", month: "long", timeZone: TZ })}`
     : "Sin membresía activa";
 
   const totalUpcoming = classBookingsCount + ptBookingsCount;
@@ -262,7 +256,7 @@ export default async function DashboardPage() {
           <div>
             <p className="font-semibold text-amber-400 text-sm">Cuenta pendiente de aprobación</p>
             <p className="text-xs text-amber-500/70 mt-0.5">
-              Tu cuenta está siendo revisada por el equipo de Cultiva. Te notificaremos cuando esté activa.
+              Tu gimnasio está revisando tu cuenta. Te notificaremos cuando esté activa.
             </p>
           </div>
         </div>
@@ -290,7 +284,7 @@ export default async function DashboardPage() {
             Hoy
           </h3>
           <span className="text-[10px] text-muted-foreground">
-            {new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
+            {new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", timeZone: TZ })}
           </span>
         </div>
         <div className="grid grid-cols-3 gap-2.5">

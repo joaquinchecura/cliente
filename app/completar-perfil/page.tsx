@@ -1,27 +1,48 @@
 export const dynamic = 'force-dynamic';
 
-import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { User, Phone, MapPin, Calendar, Heart, FileText, AlertCircle } from "lucide-react";
 import { sendWelcomeEmail } from '@/lib/email'
+import { auth, currentUser } from "@clerk/nextjs/server";
 
 async function vincularCuenta(formData: FormData) {
   "use server";
-  const clerkId = formData.get("clerkId") as string;
-  const dni = formData.get("dni") as string;
-  const phone = formData.get("phone") as string;
-  const email = formData.get("email") as string;
-  const firstName = formData.get("firstName") as string;
 
+  // 🔐 Identidad: siempre desde Clerk (servidor), nunca desde el formulario
+  const { userId: clerkId } = await auth();
+  const user = await currentUser();
+  if (!clerkId || !user) redirect("/sign-in");
+
+  const primary = user.primaryEmailAddress;
+  if (!primary || primary.verification?.status !== "verified") redirect("/sign-in");
+
+  const email = primary.emailAddress;
+  const firstName = user.firstName || "";
+  const lastName = user.lastName || "";
+
+  // Datos que sí carga la persona en el formulario
+  const dni = (formData.get("dni") as string)?.trim();
+  const phone = (formData.get("phone") as string)?.trim();
+  const birthDate = new Date(formData.get("birthDate") as string);
+
+  if (!dni || !phone || isNaN(birthDate.getTime())) redirect("/completar-perfil");
+
+  // Si esta cuenta ya está vinculada a un cliente, no hay nada que hacer
+  const alreadyLinked = await prisma.member.findUnique({
+    where: { clerkUserId: clerkId },
+    select: { id: true },
+  });
+  if (alreadyLinked) redirect("/");
+
+  // 🏢 Organización del link
   const cookieStore = await cookies();
   const orgId = cookieStore.get("pending_org")?.value;
 
   if (!orgId) redirect("/registro-invalido");
 
-  // Verificamos que la organización del link sea válida
   const organization = await prisma.organization.findUnique({
     where: { id: orgId },
     select: { status: true },
@@ -31,15 +52,30 @@ async function vincularCuenta(formData: FormData) {
     redirect("/registro-invalido");
   }
 
-  // 🔍 BUSCAMOS AL ALUMNO
+  // 🔍 BUSCAMOS AL ALUMNO (solo en esta organización, o liberado sin organización)
   const existingMember = await prisma.member.findFirst({
     where: {
       OR: [
-        { AND: [{ dni }, { organizationId: orgId }] },
-        { email },
+        { organizationId: orgId, email: { equals: email, mode: "insensitive" } },
+        { organizationId: null, email: { equals: email, mode: "insensitive" } },
       ],
     },
   });
+
+  // Si el registro ya está vinculado a otra cuenta, no lo tocamos
+  if (existingMember?.clerkUserId && existingMember.clerkUserId !== clerkId) {
+    redirect("/registro-invalido");
+  }
+
+  // Si el DNI ya existe en esta organización con otro email, no lo reclamamos:
+  // el profesional tiene que corregir el email del cliente desde MANAGER
+  if (!existingMember) {
+    const dniTaken = await prisma.member.findFirst({
+      where: { organizationId: orgId, dni },
+      select: { id: true },
+    });
+    if (dniTaken) redirect("/registro-invalido?motivo=dni");
+  }
 
   let isNewRegistration = false;
 
@@ -49,11 +85,11 @@ async function vincularCuenta(formData: FormData) {
       data: {
         clerkUserId: clerkId,
         firstName,
-        lastName: formData.get("lastName") as string,
+        lastName,
         dni,
         email,
         phone,
-        birthDate: new Date(formData.get("birthDate") as string),
+        birthDate,
         address: (formData.get("address") as string) || null,
         city: (formData.get("city") as string) || null,
         emergencyContactName: (formData.get("emergencyContactName") as string) || null,
@@ -127,7 +163,7 @@ async function vincularCuenta(formData: FormData) {
         emergencyContactPhone: (formData.get("emergencyContactPhone") as string) || existingMember.emergencyContactPhone,
         medicalNotes: (formData.get("medicalNotes") as string) || existingMember.medicalNotes,
         internalNotes: (formData.get("internalNotes") as string) || existingMember.internalNotes,
-        birthDate: new Date(formData.get("birthDate") as string),
+        birthDate,
       },
     });
   }
@@ -161,6 +197,9 @@ export default async function CompletarPerfilPage() {
     where: { clerkUserId: user.id },
   });
   if (existing) redirect("/");
+
+  const pendingOrg = (await cookies()).get("pending_org")?.value;
+  if (!pendingOrg) redirect("/registro-invalido");
 
   return (
     <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4">

@@ -1,79 +1,55 @@
 "use client";
 
+// app/sign-in/[[...sign-in]]/page.tsx  (o la ruta donde ya tengas tu sign-in)
+// Mismo estilo oscuro que /sign-up y /completar-perfil. Usa la apariencia
+// global de lib/clerk-appearance.ts (no pasamos `appearance` acá a propósito,
+// para que no se mezclen las clases claras con las oscuras).
+
 import { SignIn } from "@clerk/nextjs";
+import Image from "next/image";
 
 export default function SignInPage() {
   return (
-    <div className="min-h-screen bg-zinc-200 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Fondo decorativo */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/40 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-background to-background" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
       <div className="w-full max-w-sm relative z-10">
-        
-        {/* Branding */}
+        {/* Logo y branding */}
         <div className="text-center mb-8 space-y-4">
-          <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-white shadow-lg shadow-black/5 overflow-hidden mb-2 border border-zinc-300/50">
-            {/* Usamos img normal para evitar el optimizador de Vercel */}
-            <img
-              src="/brand/logo.png" 
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-card ring-1 ring-border shadow-2xl shadow-black/20 overflow-hidden mb-2">
+            <Image
+              src="/brand/logo-clean.png"
               alt="MIPLAN"
-              className="w-32 h-32 object-contain"
+              width={64}
+              height={64}
+              className="w-14 h-14 object-contain"
+              priority
             />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-zinc-800 tracking-tight">
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">
               Cultiva Fitness MIPLAN
             </h1>
-            <p className="text-sm text-zinc-600 mt-1.5 font-medium">
+            <p className="text-sm text-muted-foreground mt-1.5">
               Accedé a tu App y seguí tu progreso
             </p>
           </div>
         </div>
 
-        {/* Tarjeta Blanca de Clerk */}
-        <div className="bg-white rounded-3xl shadow-xl shadow-black/5 border border-zinc-300/50 overflow-hidden">
-          <SignIn
-            routing="hash"
-            forceRedirectUrl="/"
-            signUpForceRedirectUrl="/completar-perfil"
-            appearance={{
-              variables: {
-                colorPrimary: "#22c55e",
-                colorBackground: "#ffffff",
-                // Quitamos colorText y colorInput* para evitar el error de TypeScript
-                borderRadius: "1rem",
-              },
-              elements: {
-                card: "bg-transparent shadow-none p-6",
-                cardBox: "shadow-none w-full",
-                
-                // TEXTOS FORZADOS CON ! (Esto es lo que arregla Vercel)
-                headerTitle: "!text-zinc-900 text-xl font-bold",
-                headerSubtitle: "!text-zinc-500 text-sm",
-                formFieldLabel: "!text-zinc-700 font-medium",
-                footerActionText: "!text-zinc-500 text-sm",
-                footerActionLink: "!text-green-600 hover:!text-green-700 font-semibold",
-                dividerText: "!text-zinc-400 text-xs",
-                
-                // INPUTS FORZADOS CON !
-                formFieldInput: "!bg-zinc-100 !border-transparent !text-zinc-900 placeholder:!text-zinc-500 focus:!ring-green-500/20 focus:!border-green-500 h-11 rounded-xl",
-                
-                // BOTÓN PRINCIPAL
-                formButtonPrimary: "!bg-green-600 hover:!bg-green-700 !text-white font-semibold h-11 rounded-xl shadow-lg shadow-green-600/20 transition-all",
-                
-                // BOTONES SOCIALES
-                socialButtonsBlockButton: "!border-zinc-200 !text-zinc-700 hover:!bg-zinc-50 h-11 rounded-xl",
-                socialButtonsBlockButtonText: "font-medium",
-                
-                // ARREGLO DEL FOOTER
-                footer: "bg-transparent border-none mt-2",
-                footerPages: "hidden",
-              }
-            }}
-          />
+        {/* Card de login */}
+        <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/60 p-1 shadow-2xl shadow-black/20">
+          <div className="bg-card rounded-xl p-5">
+            <SignIn
+              routing="hash"
+              forceRedirectUrl="/"
+              signUpForceRedirectUrl="/completar-perfil"
+            />
+          </div>
         </div>
 
-        <p className="text-center text-xs text-zinc-500 mt-6 font-medium">
+        <p className="text-center text-xs text-muted-foreground/60 mt-6">
           Al iniciar sesión, aceptás nuestros términos y condiciones
         </p>
       </div>
