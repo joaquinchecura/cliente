@@ -7,8 +7,9 @@ export const clerkAuthAppearance = {
       borderRadius: "1rem",
     },
     elements: {
-      card: "bg-transparent shadow-none p-6",
-      cardBox: "shadow-none w-full",
+      rootBox: "!w-full",
+      cardBox: "!w-full !max-w-full shadow-none border-0 rounded-none bg-transparent",
+      card: "!w-full !max-w-full bg-transparent shadow-none border-0 rounded-none p-6",
   
       headerTitle: "!text-zinc-900 text-xl font-bold",
       headerSubtitle: "!text-zinc-500 text-sm",
@@ -27,7 +28,8 @@ export const clerkAuthAppearance = {
         "!border-zinc-200 !text-zinc-700 hover:!bg-zinc-50 h-11 rounded-xl",
       socialButtonsBlockButtonText: "font-medium",
   
-      footer: "bg-transparent border-none mt-2",
+      footer: "!bg-transparent !shadow-none border-none mt-2",
+      footerAction: "!bg-transparent",
       footerPages: "hidden",
     },
   };
