@@ -1,6 +1,7 @@
 import { dark } from "@clerk/themes";
 
 export const clerkAppearance = {
+  cssLayerName: "clerk",
   baseTheme: dark,
   variables: {
     colorPrimary: "#22c55e", // Verde
